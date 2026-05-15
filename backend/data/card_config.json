@@ -1,0 +1,610 @@
+[
+  {
+    "card_id": "profit",
+    "dom_id": "insight-profit",
+    "insight_element_id": "insight-profit",
+    "section_id": "sec-profit",
+    "name": "净利润",
+    "level": "L0",
+    "view_type": "fixed",
+    "metric_codes": ["net_profit_management", "loan_profit", "non_loan_profit", "roa", "credit_loss_rate"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": null,
+    "business_context": {
+      "parent_metric": "经营管理层",
+      "management_question": "当前净利润是否已经触底？核心拖累来自哪端？",
+      "dupont_path": ["净利润"],
+      "analysis_focus": [
+        "贷款业务净利润走势",
+        "非贷款业务是否持续拖累",
+        "ROA修复节奏"
+      ]
+    },
+    "segment_dimensions": ["product_type", "loan_vs_nonloan"],
+    "allowed_exploration_types": ["contradiction", "hidden_risk", "offset_failure"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "scale",
+    "dom_id": "insight-scale",
+    "insight_element_id": "insight-scale",
+    "section_id": "sec-scale",
+    "name": "贷款规模",
+    "level": "L1",
+    "view_type": "fixed",
+    "metric_codes": ["anr", "enr", "disbursement", "reloan_rate"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "净利润",
+    "business_context": {
+      "parent_metric": "净利润",
+      "management_question": "贷款规模收缩是否仍在拖累利润修复？",
+      "dupont_path": ["净利润", "贷款规模"],
+      "analysis_focus": [
+        "ANR是否企稳",
+        "新增放款是否足够覆盖到期",
+        "易贷压降对规模影响"
+      ]
+    },
+    "segment_dimensions": ["product_type", "vintage"],
+    "allowed_exploration_types": ["structural_shift", "quality_issue", "hidden_risk"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "enr",
+    "dom_id": "insight-enr",
+    "insight_element_id": "insight-enr",
+    "section_id": "sec-enr",
+    "name": "余额结构",
+    "level": "L2",
+    "view_type": "fixed",
+    "metric_codes": ["enr", "enr_by_product", "enr_by_pricing", "reloan_rate"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "贷款规模",
+    "business_context": {
+      "parent_metric": "贷款规模",
+      "management_question": "余额结构是否健康？易贷压降进度与消金增长是否匹配？",
+      "dupont_path": ["净利润", "贷款规模", "余额结构"],
+      "analysis_focus": [
+        "易贷余额压降节奏",
+        "消金余额增长能否对冲",
+        "高定价占比变化"
+      ]
+    },
+    "segment_dimensions": ["product_type", "pricing_tier", "vintage"],
+    "allowed_exploration_types": ["structural_shift", "quality_issue", "hidden_risk"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "disburse",
+    "dom_id": "insight-dis",
+    "insight_element_id": "insight-dis",
+    "section_id": "sec-disburse",
+    "name": "新增放款",
+    "level": "L2",
+    "view_type": "fixed",
+    "metric_codes": ["disbursement", "disbursement_by_product", "disbursement_by_channel", "pricing_rate"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "贷款规模",
+    "business_context": {
+      "parent_metric": "贷款规模",
+      "management_question": "新增放款改善是否可持续？是否依赖高风险客群或渠道？",
+      "dupont_path": ["净利润", "贷款规模", "新增放款"],
+      "analysis_focus": [
+        "新增放款总量与结构",
+        "消金放款增速是否达标",
+        "渠道质量是否分化"
+      ]
+    },
+    "segment_dimensions": ["product_type", "channel"],
+    "allowed_exploration_types": ["quality_issue", "structural_shift", "hidden_risk"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "roa",
+    "dom_id": "insight-roa",
+    "insight_element_id": "insight-roa",
+    "section_id": "sec-roa",
+    "name": "ROA拆解",
+    "level": "L1",
+    "view_type": "fixed",
+    "metric_codes": ["roa", "pricing_rate", "credit_loss_rate", "funding_cost_rate", "sales_cost_rate", "opex_rate", "tax_other_rate"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "净利润",
+    "business_context": {
+      "parent_metric": "净利润",
+      "management_question": "ROA拆解中哪个因子是当前利润修复的核心约束？",
+      "dupont_path": ["净利润", "ROA"],
+      "analysis_focus": [
+        "定价率与成本率之间的利差",
+        "风险成本对ROA的压制",
+        "资金成本改善能否对冲"
+      ]
+    },
+    "segment_dimensions": ["product_type", "cost_type"],
+    "allowed_exploration_types": ["offset_failure", "contradiction", "hidden_risk"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "pricing",
+    "dom_id": "insight-pricing",
+    "insight_element_id": "insight-pricing",
+    "section_id": "sec-pricing",
+    "name": "定价",
+    "level": "L2",
+    "view_type": "fixed",
+    "metric_codes": ["pricing_rate", "pricing_by_product", "pricing_by_customer"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "ROA拆解",
+    "business_context": {
+      "parent_metric": "ROA拆解",
+      "management_question": "定价率是否仍有支撑？高定价占比上升是否伴随风险下沉？",
+      "dupont_path": ["净利润", "ROA", "定价率"],
+      "analysis_focus": [
+        "综合定价率走势",
+        "高定价产品占比变化",
+        "新客老客定价差异是否合理"
+      ]
+    },
+    "segment_dimensions": ["product_type", "customer_type", "pricing_tier"],
+    "allowed_exploration_types": ["quality_issue", "hidden_risk", "contradiction"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "risk",
+    "dom_id": "insight-risk",
+    "insight_element_id": "insight-risk",
+    "section_id": "sec-risk",
+    "name": "风险成本",
+    "level": "L2",
+    "view_type": "fixed",
+    "metric_codes": ["credit_loss_rate", "cm3_migration", "dpd5_rate", "vintage_dpd", "recovery_rate", "collection_progress"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "ROA拆解",
+    "business_context": {
+      "parent_metric": "ROA拆解",
+      "management_question": "当前风险成本是否已经成为ROA和净利润修复的核心约束？",
+      "dupont_path": ["净利润", "ROA", "风险成本"],
+      "analysis_focus": [
+        "信贷损失率是否接近红线",
+        "风险是否集中于特定产品或Vintage",
+        "清收是否足以对冲风险暴露"
+      ]
+    },
+    "segment_dimensions": ["product_type", "vintage", "mob", "customer_type"],
+    "allowed_exploration_types": ["hidden_risk", "quality_issue", "offset_failure"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "funding",
+    "dom_id": "insight-funding",
+    "insight_element_id": "insight-funding",
+    "section_id": "sec-funding",
+    "name": "资金成本",
+    "level": "L2",
+    "view_type": "fixed",
+    "metric_codes": ["funding_cost_rate", "funding_by_source"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "ROA拆解",
+    "business_context": {
+      "parent_metric": "ROA拆解",
+      "management_question": "资金成本改善是否足以对冲风险成本上行？改善是否可持续？",
+      "dupont_path": ["净利润", "ROA", "资金成本率"],
+      "analysis_focus": [
+        "综合资金成本同比变化",
+        "各资金来源成本走势",
+        "资金成本下行空间"
+      ]
+    },
+    "segment_dimensions": ["funding_source"],
+    "allowed_exploration_types": ["offset_failure", "hidden_risk"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "opex",
+    "dom_id": "insight-opex",
+    "insight_element_id": "insight-opex",
+    "section_id": "sec-opex",
+    "name": "业务成本",
+    "level": "L2",
+    "view_type": "fixed",
+    "metric_codes": ["sales_cost_rate", "opex_rate", "sales_capacity"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "ROA拆解",
+    "business_context": {
+      "parent_metric": "ROA拆解",
+      "management_question": "业务成本是否仍有压降空间？销售成本与产能是否匹配？",
+      "dupont_path": ["净利润", "ROA", "业务成本"],
+      "analysis_focus": [
+        "销售成本率走势",
+        "运营成本率是否持续改善",
+        "直销队伍产能利用率"
+      ]
+    },
+    "segment_dimensions": ["cost_type", "sales_team_tier"],
+    "allowed_exploration_types": ["quality_issue", "contradiction", "hidden_risk"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "enr_product",
+    "dom_id": "ins-enr-prod",
+    "insight_element_id": "ins-enr-prod",
+    "section_id": "asec-enr-prod",
+    "name": "余额 by 产品类型",
+    "level": "L3",
+    "view_type": "fixed",
+    "metric_codes": ["enr_by_product"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "余额结构",
+    "business_context": {
+      "parent_metric": "余额结构",
+      "management_question": "各产品余额变动是否合理？易贷压降与消金增长是否匹配？",
+      "dupont_path": ["净利润", "贷款规模", "余额结构", "产品类型"],
+      "analysis_focus": [
+        "易贷余额压降幅度",
+        "UPL及消金余额增速",
+        "产品结构对整体ANR影响"
+      ]
+    },
+    "segment_dimensions": ["product_type"],
+    "allowed_exploration_types": ["structural_shift", "quality_issue"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "enr_vintage",
+    "dom_id": "ins-enr-vtg",
+    "insight_element_id": "ins-enr-vtg",
+    "section_id": "asec-enr-vintage",
+    "name": "余额 by Vintage",
+    "level": "L3",
+    "view_type": "fixed",
+    "metric_codes": ["enr_by_vintage", "prepayment_rate"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "余额结构",
+    "business_context": {
+      "parent_metric": "余额结构",
+      "management_question": "Vintage分布是否正常？提前还款率变化对余额影响？",
+      "dupont_path": ["净利润", "贷款规模", "余额结构", "Vintage"],
+      "analysis_focus": [
+        "各Vintage余额占比",
+        "提前还款率走势",
+        "到期分布对ANR后续影响"
+      ]
+    },
+    "segment_dimensions": ["vintage", "product_type"],
+    "allowed_exploration_types": ["structural_shift", "hidden_risk"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "disbursement_product",
+    "dom_id": "ins-dis-prod",
+    "insight_element_id": "ins-dis-prod",
+    "section_id": "asec-dis-prod",
+    "name": "新增放款 by 产品类型",
+    "level": "L3",
+    "view_type": "fixed",
+    "metric_codes": ["disbursement_by_product"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "新增放款",
+    "business_context": {
+      "parent_metric": "新增放款",
+      "management_question": "新增放款的产品结构是否健康？消金增长能否弥补易贷压降？",
+      "dupont_path": ["净利润", "贷款规模", "新增放款", "产品类型"],
+      "analysis_focus": [
+        "消金放款增速",
+        "易贷压降对总放款影响",
+        "新产品投放节奏"
+      ]
+    },
+    "segment_dimensions": ["product_type"],
+    "allowed_exploration_types": ["structural_shift", "quality_issue"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "disbursement_channel",
+    "dom_id": "ins-dis-ch",
+    "insight_element_id": "ins-dis-ch",
+    "section_id": "asec-dis-ch",
+    "name": "新增放款 by 渠道类型",
+    "level": "L3",
+    "view_type": "fixed",
+    "metric_codes": ["disbursement_by_channel"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "新增放款",
+    "business_context": {
+      "parent_metric": "新增放款",
+      "management_question": "渠道结构是否合理？高成本渠道占比是否过高？",
+      "dupont_path": ["净利润", "贷款规模", "新增放款", "渠道类型"],
+      "analysis_focus": [
+        "各渠道放款量与增速",
+        "渠道成本与放款质量",
+        "直销与渠道商比例变化"
+      ]
+    },
+    "segment_dimensions": ["channel"],
+    "allowed_exploration_types": ["quality_issue", "hidden_risk", "contradiction"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "sales_capacity",
+    "dom_id": "ins-sales-cap",
+    "insight_element_id": "ins-sales-cap",
+    "section_id": "asec-sales-cap",
+    "name": "直销队伍产能",
+    "level": "L3",
+    "view_type": "fixed",
+    "metric_codes": ["sales_capacity", "sales_cost_rate"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "业务成本",
+    "business_context": {
+      "parent_metric": "业务成本",
+      "management_question": "直销队伍产能是否达标？人均产能与成本是否匹配？",
+      "dupont_path": ["净利润", "ROA", "业务成本", "直销产能"],
+      "analysis_focus": [
+        "人均放款量走势",
+        "产能达标率",
+        "销售成本与产能弹性"
+      ]
+    },
+    "segment_dimensions": ["sales_team_tier", "region"],
+    "allowed_exploration_types": ["quality_issue", "contradiction"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "sales_performance",
+    "dom_id": "ins-sales-perf",
+    "insight_element_id": "ins-sales-perf",
+    "section_id": "asec-sales-perf",
+    "name": "直销绩优 vs 绩差",
+    "level": "L3",
+    "view_type": "fixed",
+    "metric_codes": ["sales_capacity", "staff_retention_rate", "low_performer_ratio"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "业务成本",
+    "business_context": {
+      "parent_metric": "业务成本",
+      "management_question": "绩差队伍占比是否过高？人员流失是否影响产能？",
+      "dupont_path": ["净利润", "ROA", "业务成本", "直销分层"],
+      "analysis_focus": [
+        "绩优与绩差产能差距",
+        "低绩效人员占比",
+        "人员留存率对产能稳定性影响"
+      ]
+    },
+    "segment_dimensions": ["sales_team_tier", "region"],
+    "allowed_exploration_types": ["quality_issue", "hidden_risk"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "pricing_matrix",
+    "dom_id": "ins-price-matrix",
+    "insight_element_id": "ins-price-matrix",
+    "section_id": "asec-price-matrix",
+    "name": "新客老客定价矩阵",
+    "level": "L3",
+    "view_type": "fixed",
+    "metric_codes": ["pricing_by_customer", "reloan_rate"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "定价",
+    "business_context": {
+      "parent_metric": "定价",
+      "management_question": "新客老客定价策略是否合理？复贷率变化是否反映定价风险？",
+      "dupont_path": ["净利润", "ROA", "定价率", "客群定价"],
+      "analysis_focus": [
+        "新客与老客定价差异",
+        "复贷率走势与定价关系",
+        "定价策略对客群质量影响"
+      ]
+    },
+    "segment_dimensions": ["customer_type", "pricing_tier"],
+    "allowed_exploration_types": ["quality_issue", "contradiction", "hidden_risk"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "cm3",
+    "dom_id": "ins-cm3",
+    "insight_element_id": "ins-cm3",
+    "section_id": "asec-cm3",
+    "name": "C-M3迁徙率",
+    "level": "L3",
+    "view_type": "fixed",
+    "metric_codes": ["cm3_migration"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "风险成本",
+    "business_context": {
+      "parent_metric": "风险成本",
+      "management_question": "C-M3迁徙率是否预示后续风险暴露加速？",
+      "dupont_path": ["净利润", "ROA", "风险成本", "C-M3迁徙"],
+      "analysis_focus": [
+        "C-M3迁徙率走势",
+        "迁徙率与信贷损失率的关系",
+        "各产品迁徙率分化"
+      ]
+    },
+    "segment_dimensions": ["product_type", "vintage", "mob"],
+    "allowed_exploration_types": ["hidden_risk", "quality_issue"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "vintage",
+    "dom_id": "ins-vintage",
+    "insight_element_id": "ins-vintage",
+    "section_id": "asec-vintage-heat",
+    "name": "Vintage逾期热力图",
+    "level": "L3",
+    "view_type": "fixed",
+    "metric_codes": ["vintage_dpd"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "风险成本",
+    "business_context": {
+      "parent_metric": "风险成本",
+      "management_question": "哪个Vintage批次风险最高？早逾恶化是否集中？",
+      "dupont_path": ["净利润", "ROA", "风险成本", "Vintage分析"],
+      "analysis_focus": [
+        "近期Vintage早逾率变化",
+        "高风险Vintage识别",
+        "Vintage风险与催收策略匹配"
+      ]
+    },
+    "segment_dimensions": ["vintage", "product_type", "mob"],
+    "allowed_exploration_types": ["hidden_risk", "quality_issue", "structural_shift"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  },
+  {
+    "card_id": "dpd_product",
+    "dom_id": "ins-dpd-prod",
+    "insight_element_id": "ins-dpd-prod",
+    "section_id": "asec-dpd-prod",
+    "name": "逾期率 by 产品类型",
+    "level": "L3",
+    "view_type": "fixed",
+    "metric_codes": ["dpd5_rate"],
+    "prompt_template": "card_insight_v2",
+    "schema": "card_insight.schema.json",
+    "parent_card": "风险成本",
+    "business_context": {
+      "parent_metric": "风险成本",
+      "management_question": "逾期率是否集中在特定产品？哪些产品风险恶化最严重？",
+      "dupont_path": ["净利润", "ROA", "风险成本", "产品逾期"],
+      "analysis_focus": [
+        "各产品dpd5+逾期率",
+        "易贷逾期率是否持续恶化",
+        "消金逾期率是否可控"
+      ]
+    },
+    "segment_dimensions": ["product_type", "vintage"],
+    "allowed_exploration_types": ["hidden_risk", "quality_issue", "structural_shift"],
+    "output_slots": {
+      "main_text": "standard_insight",
+      "tags": "drivers",
+      "watch": "watch_items",
+      "exploration": "exploratory_insights"
+    },
+    "enabled": true
+  }
+]

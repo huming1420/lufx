@@ -1,0 +1,15 @@
+- [x] prompt 文件 dashboard_insight_v2.txt 已替换为优化方案第七节的完整提示词（包含十五节内容和 {{DASHBOARD_FACT_PACK}} 占位符）
+- [x] schema 文件 dashboard_insight.schema.json 已更新：summary_items 包含 label/color、dimensions 包含 role、bullets 为 {icon, text}[] 对象数组、dimensions.detail 包含 next_validation、offset_factors 包含 evidence
+- [x] mock_llm.py 的 generate_dashboard_insight() 输出包含所有新字段（summary_items.label/color、dimensions.role、bullets 为对象数组、dimensions.detail.next_validation、offset_factors.evidence）
+- [x] ai_insights.html 的 HTML 结构已按优化方案第六节调整，包含 emerging_findings / management_questions / watch_items 独立区块
+- [x] summary_items 动态渲染，显示 color 色点、label 标签和 text 要点
+- [x] 维度卡片显示 role 标签
+- [x] 深度解读详情框展示 next_validation 验证指标
+- [x] emerging_findings 模块正常展示，数组为空时隐藏
+- [x] management_questions 模块正常展示
+- [x] offset_factors 展示 evidence 证据列表
+- [x] watch_items 为独立模块展示
+- [x] bullets.text 正确渲染 <strong> 标签
+- [x] 端到端验证：后端启动成功，API 返回新格式数据结构正确（summary_items 含 label/color、dimensions 含 role/bullets 对象数组/next_validation、offset_factors 含 evidence）
+- [x] server.py POST /api/insights/dashboard 生成后自动保存到 insight_repo
+- [x] insight_repo.py _hydrate_dashboard_result 优先使用 raw_llm_output_json 恢复完整数据

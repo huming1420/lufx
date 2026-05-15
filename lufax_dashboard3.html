@@ -1,0 +1,2552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>陆金所控股 · 贷款业务经营看板</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--surface3:#2a2e44;
+  --border:#2e3354;--accent:#4f8ef7;--accent2:#7c5cfc;
+  --green:#34d399;--red:#f87171;--yellow:#fbbf24;--orange:#fb923c;--purple:#a78bfa;
+  --text:#e2e8f0;--muted:#94a3b8;--nav-w:265px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:"PingFang SC","Microsoft YaHei",sans-serif;display:flex;min-height:100vh;}
+#nav{width:var(--nav-w);min-height:100vh;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;left:0;bottom:0;overflow-y:auto;z-index:100;display:flex;flex-direction:column;}
+#nav .logo{padding:16px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+#nav .logo h2{font-size:13.5px;font-weight:700;color:var(--accent);letter-spacing:.5px;}
+#nav .logo p{font-size:10.5px;color:var(--muted);margin-top:3px;}
+.view-switch{display:flex;margin:10px 12px 0;gap:6px;flex-shrink:0;}
+.view-btn{flex:1;padding:6px 0;border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:.15s;text-align:center;}
+.view-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.view-btn:hover:not(.active){background:var(--surface2);color:var(--text);}
+.nav-tree{padding:10px 0;flex:1;overflow-y:auto;}
+.nav-group-label{padding:6px 16px 2px;font-size:9.5px;color:var(--muted);font-weight:700;letter-spacing:.8px;opacity:.55;}
+.nav-level{display:flex;align-items:center;gap:5px;padding:5.5px 14px;cursor:pointer;font-size:12px;transition:.15s;border-left:3px solid transparent;position:relative;}
+.nav-level:hover{background:var(--surface2);color:#fff;}
+.nav-level.active{border-left-color:var(--accent);background:rgba(79,142,247,.1);color:var(--accent);}
+.nav-level.l0{font-weight:700;font-size:12.5px;color:var(--yellow);padding-left:14px;}
+.nav-level.l1{padding-left:24px;color:var(--text);}
+.nav-level.l2{padding-left:36px;color:var(--muted);font-size:11.5px;}
+.nav-level.l3{padding-left:50px;color:var(--muted);font-size:11px;opacity:.85;}
+.nav-level.l3.alert-nav{color:var(--red);opacity:1;}
+.nav-level.l3.warn-nav{color:var(--yellow);opacity:1;}
+a.nav-ai-link{text-decoration:none;color:inherit;display:flex;align-items:center;gap:5px;}
+a.nav-ai-link:hover{background:var(--surface2);color:#fff;}
+.nav-sep{height:1px;background:var(--border);margin:5px 14px;}
+.lamp{display:inline-flex;align-items:center;gap:2px;margin-left:auto;flex-shrink:0;}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
+.dot-r{background:var(--red);box-shadow:0 0 4px var(--red);}
+.dot-y{background:var(--yellow);box-shadow:0 0 4px var(--yellow);}
+.dot-g{background:var(--green);box-shadow:0 0 4px var(--green);}
+#main{margin-left:var(--nav-w);flex:1;padding:20px 24px 60px;overflow-x:hidden;}
+#dupont-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 18px;margin-bottom:18px;position:sticky;top:0;z-index:50;}
+.dp-title{font-size:9.5px;color:var(--muted);margin-bottom:6px;font-weight:700;letter-spacing:.5px;}
+.dp-nodes{display:flex;align-items:center;flex-wrap:wrap;gap:0;row-gap:5px;}
+.dp-node{display:inline-flex;align-items:center;}
+.dp-box{padding:4px 10px;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;border:1.5px solid transparent;transition:.15s;display:flex;align-items:center;gap:3px;}
+.dp-box:hover{filter:brightness(1.15);}
+.dp-box.active{box-shadow:0 0 0 2px rgba(255,255,255,.18);}
+.dp-box.dp-l0{background:rgba(251,191,36,.18);border-color:var(--yellow);color:var(--yellow);}
+.dp-box.dp-l1{background:rgba(79,142,247,.15);border-color:var(--accent);color:var(--accent);}
+.dp-box.dp-l2{background:rgba(52,211,153,.12);border-color:var(--green);color:var(--green);}
+.dp-arrow{font-size:14px;color:var(--border);padding:0 4px;}
+.dp-logic-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:18px;}
+.dp-logic-title{font-size:10px;color:var(--muted);margin-bottom:8px;font-weight:700;letter-spacing:.5px;}
+.dp-level{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px;}
+.dp-level:last-child{margin-bottom:0;}
+.dp-row-label{font-size:10px;color:var(--muted);min-width:56px;font-weight:700;}
+.dp-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;transition:.15s;}
+.dp-pill:hover{filter:brightness(1.12);}
+.dp-pill.active{border-color:var(--accent);box-shadow:0 0 0 1px rgba(79,142,247,.35) inset;}
+.dp-pill .label{font-size:11px;color:var(--text);font-weight:600;}
+.dp-pill .val{font-size:10px;font-weight:700;}
+.dp-pill .val.neg{color:var(--red);}
+.dp-pill .val.pos{color:var(--green);}
+.dp-pill .val.neu{color:var(--yellow);}
+.dp-pill .tl{width:8px;height:8px;border-radius:50%;display:inline-block;box-shadow:0 0 5px currentColor;}
+.dp-pill .tl.r{background:var(--red);color:var(--red);}
+.dp-pill .tl.y{background:var(--yellow);color:var(--yellow);}
+.dp-pill .tl.g{background:var(--green);color:var(--green);}
+.dp-op,.dp-plus{font-size:12px;color:var(--muted);font-weight:700;}
+.section{margin-bottom:26px;}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.section-title{font-size:15px;font-weight:700;}
+.section-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.badge-l0{background:rgba(251,191,36,.2);color:var(--yellow);}
+.badge-l1{background:rgba(79,142,247,.2);color:var(--accent);}
+.badge-l2{background:rgba(52,211,153,.15);color:var(--green);}
+.badge-l3{background:rgba(168,139,250,.15);color:var(--purple);}
+.dual-lamp{display:inline-flex;align-items:center;gap:7px;padding:3px 10px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);}
+.lamp-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);}
+.lamp-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;cursor:pointer;transition:.15s;}
+.lamp-dot:hover{filter:brightness(1.3);transform:scale(1.2);}
+.lamp-dot.red{background:var(--red);box-shadow:0 0 6px var(--red);}
+.lamp-dot.yellow{background:var(--yellow);box-shadow:0 0 6px var(--yellow);}
+.lamp-dot.green{background:var(--green);box-shadow:0 0 6px var(--green);}
+.alert-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+.atag{display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;cursor:pointer;transition:.15s;}
+.atag:hover{filter:brightness(1.2);}
+.atag.red{background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.35);color:var(--red);}
+.atag.yellow{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:var(--yellow);}
+.atag.green{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);color:var(--green);}
+.atag.more{background:var(--surface3);border:1px solid var(--border);color:var(--muted);}
+.insight-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-top:10px;}
+.insight-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;}
+.insight-label{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.4px;}
+.insight-edit-btn{font-size:10px;padding:2px 8px;border-radius:6px;background:var(--surface3);border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:.15s;}
+.insight-edit-btn:hover,.insight-edit-btn.editing{background:var(--accent);color:#fff;border-color:var(--accent);}
+.insight-text{font-size:12px;line-height:1.75;color:var(--text);outline:none;}
+.insight-text[contenteditable=true]{border-bottom:1px dashed var(--accent);padding-bottom:2px;}
+.charts-grid{display:grid;gap:14px;}
+.cg1{grid-template-columns:1fr;}
+.cg2{grid-template-columns:1fr 1fr;}
+.cg3{grid-template-columns:1fr 1fr 1fr;}
+.cg5{grid-template-columns:repeat(5,1fr);}
+.cg22{grid-template-columns:1fr 1fr;grid-template-rows:auto auto;}
+.cg-funding-4{grid-template-columns:1fr 1fr;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;}
+.chart-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.chart-sub{font-size:10.5px;color:var(--muted);margin-bottom:9px;}
+.cw{height:220px;}
+.cw-lg{height:270px;}
+.cw-sm{height:170px;}.cg3 .chart-card{padding:10px 12px;}
+.ytd-tags{display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap;}
+.ytag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;}
+.ytag.up{background:rgba(248,113,113,.15);color:var(--red);}
+.ytag.dn{background:rgba(52,211,153,.12);color:var(--green);}
+.ytag.flat{background:rgba(148,163,184,.1);color:var(--muted);}
+.collapse-btn{font-size:11px;padding:3px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-top:6px;}
+.collapse-btn:hover{background:var(--surface3);}
+.collapse-content{overflow:hidden;transition:max-height .35s ease;max-height:0;}
+.collapse-content.open{max-height:800px;}
+.data-table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
+.data-table th{padding:5px 9px;background:var(--surface3);color:var(--muted);font-weight:600;text-align:right;border:1px solid var(--border);}
+.data-table th:first-child{text-align:left;}
+.data-table td{padding:4px 9px;border:1px solid var(--border);text-align:right;color:var(--text);}
+.data-table td:first-child{text-align:left;color:var(--muted);}
+.data-table tr:hover td{background:var(--surface2);}
+.td-pos{color:var(--red);}
+.td-neg{color:var(--green);}
+.heatmap-wrap{overflow-x:auto;margin-top:8px;border-radius:8px;border:1px solid var(--border);}
+.heatmap-table{border-collapse:collapse;font-size:11px;min-width:100%;}
+.heatmap-table th{padding:5px 8px;background:var(--surface3);color:var(--muted);font-size:10.5px;border:1px solid var(--border);font-weight:600;white-space:nowrap;position:sticky;top:0;}
+.heatmap-table td{padding:4px 7px;border:1px solid var(--border);text-align:center;font-weight:600;font-size:10.5px;transition:.2s;min-width:52px;}
+.heatmap-table td.na{color:var(--muted);font-weight:400;background:var(--surface);}
+.heatmap-table td.rh{text-align:left;color:var(--muted);background:var(--surface3);font-weight:700;white-space:nowrap;}
+.view-fixed{display:block;}
+.view-alert{display:none;}
+body.alert-view .view-fixed{display:none;}
+body.alert-view .view-alert{display:block;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:.2s;}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;max-width:420px;width:92%;position:relative;}
+.modal h3{font-size:13.5px;margin-bottom:10px;color:var(--accent);}
+.modal p{font-size:12px;line-height:1.75;color:var(--muted);}
+.modal-close{position:absolute;top:11px;right:13px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
+.inline-row{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+.inline-row>.chart-card{flex:1;min-width:240px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:10px 12px;}
+.kpi-label{font-size:10.5px;color:var(--muted);line-height:1.3;}
+.kpi-val{font-size:20px;font-weight:800;margin-top:4px;}
+.kpi-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+.kpi-ytd{font-size:9px;color:var(--accent);margin-top:2px;}
+.kpi-up{color:var(--green);}
+.kpi-down{color:var(--red);}
+.formula-box{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.formula-title{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:8px;}
+.formula-row{display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:6px;font-size:11.5px;}
+.formula-row:last-child{margin-bottom:0;}
+.f-tag{color:var(--yellow);font-weight:700;}
+.f-eq{color:var(--accent);font-weight:700;}
+.f-op{color:var(--muted);}
+.f-chip{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-size:10.5px;color:var(--text);font-weight:600;}
+.f-res{font-size:12px;font-weight:800;color:var(--green);}
+.f-sep{height:1px;background:var(--border);margin:8px 0;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+@media(max-width:900px){
+  :root{--nav-w:225px;}
+  .cg2,.cg22,.cg3,.cg-funding-4{grid-template-columns:1fr;}
+  .cw-sm{height:200px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== 导航栏 ===== -->
+<nav id="nav">
+  <div class="logo">
+    <h2>📊 陆金所控股</h2>
+    <p>贷款业务经营看板 · 2026</p>
+  </div>
+  <div class="view-switch">
+    <button class="view-btn active" id="btn-fixed" onclick="switchView('fixed')">📋 固定表</button>
+    <button class="view-btn" id="btn-alert" onclick="switchView('alert')">🚨 预警表</button>
+  </div>
+
+  <!-- 固定表导航 -->
+  <div class="nav-tree view-fixed" id="nav-fixed">
+    <div class="nav-group-label">陆控整体 L0-L2</div>
+    <div class="nav-level l0 active" data-sec="sec-profit" onclick="navClick(this,'sec-profit')">
+      L0 净利润
+      <span class="lamp"><span class="dot dot-r"></span><span class="dot dot-r"></span></span>
+    </div>
+    <div class="nav-level l1" data-sec="sec-scale" onclick="navClick(this,'sec-scale')">
+      L1 贷款规模
+      <span class="lamp"><span class="dot dot-y"></span><span class="dot dot-r"></span></span>
+    </div>
+    <div class="nav-level l2" data-sec="sec-enr" onclick="navClick(this,'sec-enr')">
+      L2 余额结构
+    </div>
+    <div class="nav-level l2" data-sec="sec-disburse" onclick="navClick(this,'sec-disburse')">
+      L2 新增放款
+    </div>
+    <div class="nav-level l1" data-sec="sec-roa" onclick="navClick(this,'sec-roa')">
+      L1 ROA 拆解
+      <span class="lamp"><span class="dot dot-r"></span><span class="dot dot-r"></span></span>
+    </div>
+    <div class="nav-level l2" data-sec="sec-pricing" onclick="navClick(this,'sec-pricing')">
+      L2 定价
+    </div>
+    <div class="nav-level l2" data-sec="sec-risk" onclick="navClick(this,'sec-risk')">
+      L2 风险成本
+      <span class="lamp"><span class="dot dot-r"></span><span class="dot dot-r"></span></span>
+    </div>
+    <div class="nav-level l2" data-sec="sec-funding" onclick="navClick(this,'sec-funding')">
+      L2 资金成本
+    </div>
+    <div class="nav-level l2" data-sec="sec-opex" onclick="navClick(this,'sec-opex')">
+      L2 业务成本
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-group-label">AI 洞察</div>
+    <div class="nav-level l2" style="cursor:default;opacity:.95;">🤖 AI 洞察</div>
+    <a class="nav-level l3 nav-ai-link" href="ai_insights.html#interpret">动态解读</a>
+    <a class="nav-level l3 nav-ai-link" href="ai_insights.html#predict">经营计算器</a>
+    <div class="nav-sep"></div>
+    <div class="nav-group-label">陆控机构（占位）</div>
+    <div class="nav-level l1" style="opacity:.35;cursor:default;">陆控机构（待定）</div>
+  </div>
+
+  <!-- 预警表导航 -->
+  <div class="nav-tree view-alert" id="nav-alert" style="display:none;">
+    <div class="nav-group-label">陆控整体 L1-L3</div>
+    <div class="nav-level l0 active" data-sec="asec-profit" onclick="navClick(this,'asec-profit')">
+      L0 净利润
+      <span class="lamp"><span class="dot dot-r"></span><span class="dot dot-r"></span></span>
+    </div>
+    <div class="nav-level l1" data-sec="asec-scale" onclick="navClick(this,'asec-scale')">
+      L1 贷款规模
+      <span class="lamp"><span class="dot dot-y"></span><span class="dot dot-r"></span></span>
+    </div>
+    <div class="nav-level l2" onclick="navClick(this,'asec-enr-prod')">L2 余额</div>
+    <div class="nav-level l3" data-sec="asec-enr-prod" onclick="navClick(this,'asec-enr-prod')">
+      L3 余额 by 产品类型
+    </div>
+    <div class="nav-level l3 alert-nav" data-sec="asec-enr-vintage" onclick="navClick(this,'asec-enr-vintage')">
+      <span class="dot dot-r"></span> L3 余额 by Vintage
+    </div>
+    <div class="nav-level l2" onclick="navClick(this,'asec-dis-prod')">L2 新增放款</div>
+    <div class="nav-level l3" data-sec="asec-dis-prod" onclick="navClick(this,'asec-dis-prod')">
+      L3 新增放款 by 产品类型
+    </div>
+    <div class="nav-level l3" data-sec="asec-dis-ch" onclick="navClick(this,'asec-dis-ch')">
+      L3 新增放款 by 渠道类型
+    </div>
+    <div class="nav-level l3 alert-nav" data-sec="asec-sales-cap" onclick="navClick(this,'asec-sales-cap')">
+      <span class="dot dot-r"></span> L3 直销队伍：产能
+    </div>
+    <div class="nav-level l3 alert-nav" data-sec="asec-sales-perf" onclick="navClick(this,'asec-sales-perf')">
+      <span class="dot dot-r"></span> L3 直销队伍：绩优 vs 绩差
+    </div>
+    <div class="nav-level l1" data-sec="asec-roa" onclick="navClick(this,'asec-roa')">
+      L1 ROA 拆解
+      <span class="lamp"><span class="dot dot-r"></span><span class="dot dot-r"></span></span>
+    </div>
+    <div class="nav-level l2" onclick="navClick(this,'asec-price-matrix')">L2 定价</div>
+    <div class="nav-level l3" data-sec="asec-price-matrix" onclick="navClick(this,'asec-price-matrix')">
+      L3 定价 by 新客/老客
+    </div>
+    <div class="nav-level l3" data-sec="asec-price-prod" onclick="navClick(this,'asec-price-prod')">
+      L3 定价 by 产品类型
+    </div>
+    <div class="nav-level l2" onclick="navClick(this,'asec-cm3')">L2 风险成本</div>
+    <div class="nav-level l3" data-sec="asec-cm3" onclick="navClick(this,'asec-cm3')">
+      L3 C-M3 迁徙率预警
+    </div>
+    <div class="nav-level l3 alert-nav" data-sec="asec-vintage-heat" onclick="navClick(this,'asec-vintage-heat')">
+      <span class="dot dot-r"></span> L3 逾期率 by Vintage
+    </div>
+    <div class="nav-level l3" data-sec="asec-dpd-cust" onclick="navClick(this,'asec-dpd-cust')">
+      L3 逾期率 by 客群类型
+    </div>
+    <div class="nav-level l3" data-sec="asec-dpd-newold" onclick="navClick(this,'asec-dpd-newold')">
+      L3 逾期率 by 新客/老客
+    </div>
+    <div class="nav-level l3 alert-nav" data-sec="asec-dpd-prod" onclick="navClick(this,'asec-dpd-prod')">
+      <span class="dot dot-r"></span> L3 逾期率 by 产品类型
+    </div>
+    <div class="nav-level l3" data-sec="asec-recovery" onclick="navClick(this,'asec-recovery')">
+      L3 回收率 by Vintage
+    </div>
+    <div class="nav-level l3" data-sec="asec-llr" onclick="navClick(this,'asec-llr')">
+      L3 拨备覆盖率
+    </div>
+    <div class="nav-sep"></div>
+    <div class="nav-group-label">AI 洞察</div>
+    <div class="nav-level l2" style="cursor:default;opacity:.95;">🤖 AI 洞察</div>
+    <a class="nav-level l3 nav-ai-link" href="ai_insights.html#interpret">动态解读</a>
+    <a class="nav-level l3 nav-ai-link" href="ai_insights.html#predict">经营计算器</a>
+    <div class="nav-sep"></div>
+    <div class="nav-group-label">陆控机构（占位）</div>
+    <div class="nav-level l1" style="opacity:.35;cursor:default;">陆控机构（待定）</div>
+  </div>
+</nav>
+
+<!-- ===== 主内容区 ===== -->
+ 
+<main id="main">
+
+<div id="ai-insight-progress" style="display:none;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 14px;margin-bottom:12px;"></div>
+
+<!-- 杜邦顶栏 (固定表) -->
+<div id="dupont-bar" class="view-fixed">
+  <div class="dp-title">杜邦结构导航 · 点击跳转 / 滚动自动高亮</div>
+  <div class="dp-nodes">
+    <div class="dp-node">
+      <div class="dp-box dp-l0 active" id="dp-profit" onclick="navClick(null,'sec-profit')">
+        <span class="dot dot-r"></span>净利润
+      </div>
+    </div>
+    <span class="dp-arrow">›</span>
+    <div class="dp-node">
+      <div class="dp-box dp-l1" id="dp-scale" onclick="navClick(null,'sec-scale')">
+        <span class="dot dot-y"></span>贷款规模
+      </div>
+    </div>
+    <span class="dp-arrow">+</span>
+    <div class="dp-node">
+      <div class="dp-box dp-l1" id="dp-roa" onclick="navClick(null,'sec-roa')">
+        <span class="dot dot-r"></span>ROA拆解
+      </div>
+    </div>
+    <span class="dp-arrow">›</span>
+    <div class="dp-node">
+      <div class="dp-box dp-l2" id="dp-pricing" onclick="navClick(null,'sec-pricing')">定价</div>
+    </div>
+    <span class="dp-arrow">−</span>
+    <div class="dp-node">
+      <div class="dp-box dp-l2" id="dp-risk" onclick="navClick(null,'sec-risk')">
+        <span class="dot dot-r"></span>风险成本
+      </div>
+    </div>
+    <span class="dp-arrow">−</span>
+    <div class="dp-node">
+      <div class="dp-box dp-l2" id="dp-funding" onclick="navClick(null,'sec-funding')">资金成本</div>
+    </div>
+    <span class="dp-arrow">−</span>
+    <div class="dp-node">
+      <div class="dp-box dp-l2" id="dp-opex" onclick="navClick(null,'sec-opex')">业务成本</div>
+    </div>
+  </div>
+</div>
+
+<!-- 杜邦顶栏 (预警表) -->
+<div id="dupont-bar-alert" class="view-alert" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 18px;margin-bottom:18px;position:sticky;top:0;z-index:50;">
+  <div class="dp-title">🚨 预警表 · L0-L3 根因追溯导航</div>
+  <div class="dp-nodes">
+    <div class="dp-box dp-l0" onclick="navClick(null,'asec-profit')"><span class="dot dot-r"></span>净利润</div>
+    <span class="dp-arrow">›</span>
+    <div class="dp-box dp-l1" onclick="navClick(null,'asec-scale')"><span class="dot dot-y"></span>贷款规模</div>
+    <span class="dp-arrow">+</span>
+    <div class="dp-box dp-l1" onclick="navClick(null,'asec-roa')"><span class="dot dot-r"></span>ROA</div>
+    <span class="dp-arrow">›</span>
+    <div class="dp-box dp-l2" onclick="navClick(null,'asec-vintage-heat')"><span class="dot dot-r"></span>风险成本</div>
+    <span class="dp-arrow">›</span>
+    <div class="dp-box" style="background:rgba(248,113,113,.15);border:1.5px solid var(--red);color:var(--red);border-radius:7px;padding:4px 10px;font-size:11px;font-weight:600;" onclick="navClick(null,'asec-vintage-heat')">
+      <span class="dot dot-r"></span> Vintage早逾恶化
+    </div>
+  </div>
+</div>
+
+<!-- ════ 杜邦逻辑导航条（统一高亮） ════ -->
+    <div id="dupont-logic-bar" class="dp-logic-wrap view-fixed">
+      <div class="dp-logic-title">▸ 杜邦拆解逻辑（点击跳转 / 滚动高亮 / 红黄绿预警）</div>
+
+      <div class="dp-level">
+        <div class="dp-row-label">L1净利润</div>
+        <div class="dp-pill active" data-target="sec-profit" onclick="navClick(null,'sec-profit')">
+          <span class="tl r"></span>
+          <span class="label">陆控管理口径净利润</span>
+          <span class="val neg">-12.3亿</span>
+        </div>
+        <span class="dp-op">=</span>
+        <div class="dp-pill" data-target="sec-profit" onclick="navClick(null,'sec-profit')">
+          <span class="tl r"></span>
+          <span class="label">贷款业务净利润</span>
+          <span class="val neg">-9.8亿</span>
+        </div>
+        <span class="dp-plus">+</span>
+        <div class="dp-pill">
+          <span class="tl y"></span>
+          <span class="label">非贷款业务净利润</span>
+          <span class="val neg">-2.5亿</span>
+        </div>
+      </div>
+
+      <div class="dp-level">
+        <div class="dp-row-label">L2规模</div>
+        <div class="dp-pill" data-target="sec-scale" onclick="navClick(null,'sec-scale')">
+          <span class="tl y"></span>
+          <span class="label">平均贷款余额</span>
+          <span class="val neu">2,580亿</span>
+        </div>
+        <span class="dp-op">×</span>
+        <div class="dp-pill" data-target="sec-roa" onclick="navClick(null,'sec-roa')">
+          <span class="tl r"></span>
+          <span class="label">ROA</span>
+          <span class="val neg">4.2%</span>
+        </div>
+      </div>
+
+      <div class="dp-level">
+        <div class="dp-row-label">L3ROA</div>
+        <div class="dp-pill" data-target="sec-pricing" onclick="navClick(null,'sec-pricing')">
+          <span class="tl g"></span>
+          <span class="label">定价</span>
+          <span class="val pos">12%</span>
+        </div>
+        <span class="dp-op">−</span>
+        <div class="dp-pill" data-target="sec-risk" onclick="navClick(null,'sec-risk')">
+          <span class="tl r"></span>
+          <span class="label">信贷成本</span>
+          <span class="val neg">4.8%</span>
+        </div>
+        <span class="dp-op">−</span>
+        <div class="dp-pill" data-target="sec-funding" onclick="navClick(null,'sec-funding')">
+          <span class="tl g"></span>
+          <span class="label">资金成本</span>
+          <span class="val neg">1.8%</span>
+        </div>
+        <span class="dp-op">−</span>
+        <div class="dp-pill" data-target="sec-opex" onclick="navClick(null,'sec-opex')">
+          <span class="tl g"></span>
+          <span class="label">业务成本</span>
+          <span class="val neg">2.9%</span>
+        </div>
+      </div>
+    </div>
+
+<!-- ============================================================ -->
+<!-- 固定表 -->
+<!-- ============================================================ -->
+<div class="view-fixed">
+
+<!-- ── L0 净利润 ── -->
+<div class="section" id="sec-profit">
+  <div class="section-header">
+    <span class="section-badge badge-l0">L0</span>
+    <span class="section-title">净利润</span>
+    <div class="dual-lamp" id="lamp-profit">
+      <div class="lamp-item">
+        <div class="lamp-dot red" onclick="cycleLamp(this,'profit','cur')" title="点击切换现状灯"></div>
+        <span>现状</span>
+      </div>
+      <span style="color:var(--border)">·</span>
+      <div class="lamp-item">
+        <div class="lamp-dot red" onclick="cycleLamp(this,'profit','fwd')" title="点击切换预警灯"></div>
+        <span>预警</span>
+      </div>
+    </div>
+    <button class="collapse-btn" onclick="toggleCollapse('profit-detail')">
+      <span id="profit-detail-icon">▶</span> 各利润口径详表
+    </button>
+  </div>
+
+  <!-- 洞察 -->
+  <div class="insight-box">
+    <div class="insight-header">
+      <span class="insight-label">💡 文字洞察</span>
+      <button class="insight-edit-btn" onclick="toggleEdit('insight-profit')">✏ 编辑</button>
+    </div>
+    <div class="insight-text" id="insight-profit" data-card-id="profit">正在生成洞察...</div>
+    <div class="alert-tags">
+      <span class="atag red" onclick="jumpToAlert('asec-vintage-heat')">#Vintage-2024Q1早逾恶化</span>
+      <span class="atag red" onclick="jumpToAlert('asec-dpd-prod')">#易贷逾期突增</span>
+      <span class="atag yellow" onclick="jumpToAlert('asec-cm3')">#C-M3迁徙率上行</span>
+    </div>
+  </div>
+
+  <div class="charts-grid cg5" style="margin-top:12px;">
+    <div class="kpi-card">
+      <div class="kpi-label">陆控管理口径净利润</div>
+      <div class="kpi-val kpi-down">-12.3亿</div>
+      <div class="kpi-sub">同比 <span class="kpi-down">▼168%</span></div>
+      <div class="kpi-ytd">YTD 累计口径</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">贷款业务净利润</div>
+      <div class="kpi-val kpi-down">-9.8亿</div>
+      <div class="kpi-sub">同比 <span class="kpi-down">▼132%</span></div>
+      <div class="kpi-ytd">YTD 累计口径</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">非贷款业务净利润</div>
+      <div class="kpi-val kpi-down">-2.5亿</div>
+      <div class="kpi-sub">同比 <span class="kpi-down">▼21%</span></div>
+      <div class="kpi-ytd">YTD 累计口径</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">ROA</div>
+      <div class="kpi-val kpi-up">4.2%</div>
+      <div class="kpi-sub">同比 <span class="kpi-up">▲0.3pct</span></div>
+      <div class="kpi-ytd">YTD 年化口径</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">ROE</div>
+      <div class="kpi-val kpi-down">-4.2%</div>
+      <div class="kpi-sub">同比 <span class="kpi-down">▼2.1pct</span></div>
+      <div class="kpi-ytd">YTD 年化口径</div>
+    </div>
+  </div>
+
+  <div class="charts-grid cg2" style="margin-top:12px;">
+    <div class="chart-card">
+      <div class="chart-title">月度净利润趋势（陆控管理口径）</div>
+      <div class="chart-sub">亿元 · 2024年1月起 by 月</div>
+      <div class="cw" id="c-profit-m"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">月度总收入 VS 总成本</div>
+      <div class="chart-sub">亿元 · 2024年1月起 by 月</div>
+      <div class="cw" id="c-revenue-m"></div>
+    </div>
+  </div>
+
+  <button class="collapse-btn" onclick="toggleCollapse('profit-hookup')">
+    <span id="profit-hookup-icon">▶</span> 利润口径勾稽关系（公式）
+  </button>
+  <div class="collapse-content" id="profit-hookup">
+    <div class="formula-box" style="margin-top:10px;">
+      <div class="formula-title">利润口径勾稽关系 · YTD绝对值（亿元）</div>
+      <div class="formula-row"><span class="f-tag">①</span><span>陆控法人净利润</span><span class="f-eq">=</span><span class="f-chip">-8.2亿</span></div>
+      <div class="formula-row"><span class="f-tag">②</span><span>消金净利润（100%）</span><span class="f-eq">=</span><span class="f-chip">-5.5亿</span></div>
+      <div class="formula-row"><span class="f-tag">③</span><span>产险信保净利润</span><span class="f-eq">=</span><span class="f-chip">+1.2亿</span></div>
+      <div class="f-sep"></div>
+      <div class="formula-row">
+        <span>陆控集团归母净利润</span><span class="f-eq">=</span>
+        <span class="f-chip">①×66.8% = -5.47亿</span><span class="f-op">+</span>
+        <span class="f-chip">②×30% = -1.65亿</span><span class="f-op">+</span>
+        <span class="f-chip">③×100% = +1.2亿</span><span class="f-eq">=</span>
+        <span class="f-res">-8.65亿</span>
+      </div>
+      <div class="f-sep"></div>
+      <div class="formula-row"><span class="f-tag">④</span><span>贷款业务净利润</span><span class="f-eq">=</span><span class="f-chip">平均贷款余额 × ROA</span><span class="f-eq">=</span><span class="f-chip">-9.8亿</span></div>
+      <div class="formula-row"><span class="f-tag">⑤</span><span>非贷款业务净利润（含香港）</span><span class="f-eq">=</span><span class="f-chip">-2.5亿</span></div>
+      <div class="formula-row"><span>陆控管理口径净利润</span><span class="f-eq">=</span><span class="f-chip">④ + ⑤</span><span class="f-eq">=</span><span class="f-res">-12.3亿</span></div>
+    </div>
+    <div class="charts-grid cg3" style="margin-top:10px;">
+      <div class="chart-card">
+        <div class="chart-title">陆控自身归母法人净利润（月度）<span class="section-badge badge-l3">主体①</span></div>
+        <div class="chart-sub">亿元 · 2024年1月起 by 月</div>
+        <div class="cw-sm" id="c-profit-entity1"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">平安消金净利润（全口径100%）<span class="section-badge badge-l3">主体②</span></div>
+        <div class="chart-sub">亿元 · 2024年1月起 by 月</div>
+        <div class="cw-sm" id="c-profit-entity2"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">产险信保净利润（月度）<span class="section-badge badge-l3">主体③</span></div>
+        <div class="chart-sub">亿元 · 2024年1月起 by 月</div>
+        <div class="cw-sm" id="c-profit-entity3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 利润详表（可折叠） -->
+  <div class="collapse-content" id="profit-detail">
+    <div class="chart-card" style="margin-top:12px;">
+      <div class="chart-title">各利润口径详表 · YTD绝对值（亿元）</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>口径</th><th>公式</th><th>2024A</th><th>2025A</th>
+            <th>2026M1</th><th>2026M2</th><th>2026M3 YTD</th><th>vs预算</th><th>同比</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>① 陆控法人净利润</td><td>法人账净利润</td><td>30.6</td><td>28.9</td><td>-2.6</td><td>-5.1</td><td>-8.2</td><td class="td-neg">-0.8</td><td class="td-neg">-12%</td></tr>
+          <tr><td>② 消金净利润（100%）</td><td>消金公司报表净利润</td><td>-3.8</td><td>-4.7</td><td>-1.7</td><td>-3.4</td><td>-5.5</td><td class="td-neg">-0.6</td><td class="td-neg">-9%</td></tr>
+          <tr><td>③ 产险信保净利润</td><td>信保业务净利润</td><td>0.9</td><td>1.1</td><td>0.4</td><td>0.8</td><td>1.2</td><td class="td-pos">+0.1</td><td class="td-pos">+3%</td></tr>
+          <tr><td>④ 陆控集团归母净利润</td><td>①×100% + ②×30% + ③×100%</td><td>30.4</td><td>28.6</td><td>-2.7</td><td>-5.3</td><td>-8.65</td><td class="td-neg">-0.9</td><td class="td-neg">-14%</td></tr>
+          <tr><td>⑤ 贷款业务净利润</td><td>平均贷款余额 × ROA</td><td>34.2</td><td>31.5</td><td>-3.2</td><td>-6.1</td><td>-9.8</td><td class="td-neg">-1.0</td><td class="td-neg">-13%</td></tr>
+          <tr><td>⑥ 非贷款业务净利润</td><td>管理口径 - 贷款业务</td><td>-2.1</td><td>-2.0</td><td>-0.8</td><td>-1.6</td><td>-2.5</td><td class="td-neg">-0.2</td><td class="td-neg">-6%</td></tr>
+          <tr><td>⑦ 陆控管理口径净利润</td><td>⑤ + ⑥</td><td>32.1</td><td>29.5</td><td>-4.0</td><td>-7.7</td><td>-12.3</td><td class="td-neg">-1.2</td><td class="td-neg">-18%</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px;">注：公式列用于口径勾稽校验，数值为示例口径。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── L1 贷款规模 ── -->
+<div class="section" id="sec-scale">
+  <div class="section-header">
+    <span class="section-badge badge-l1">L1</span>
+    <span class="section-title">贷款规模</span>
+    <div class="dual-lamp">
+      <div class="lamp-item">
+        <div class="lamp-dot yellow" onclick="cycleLamp(this,'scale','cur')"></div><span>现状</span>
+      </div>
+      <span style="color:var(--border)">·</span>
+      <div class="lamp-item">
+        <div class="lamp-dot red" onclick="cycleLamp(this,'scale','fwd')"></div><span>预警</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    <div class="insight-header">
+      <span class="insight-label">💡 文字洞察</span>
+      <button class="insight-edit-btn" onclick="toggleEdit('insight-scale')">✏ 编辑</button>
+    </div>
+    <div class="insight-text" id="insight-scale" data-card-id="scale">正在生成洞察...</div>
+    <div class="alert-tags">
+      <span class="atag yellow" onclick="jumpToAlert('asec-sales-cap')">#直销绩差占比31%</span>
+      <span class="atag yellow" onclick="jumpToAlert('asec-dis-ch')">#消金联营压降进展</span>
+    </div>
+  </div>
+
+  <div class="charts-grid cg3" style="margin-top:12px;">
+    <!-- ENR -->
+    <div class="chart-card">
+      <div class="chart-title">期末贷款余额（ENR）</div>
+      <div class="ytd-tags">
+        <span class="ytag up">YTD ▼同比-8%</span>
+        <span class="ytag up">YTD ▼低于预算-5%</span>
+      </div>
+      <div class="chart-sub">亿元 · 2024年1月起 by 月</div>
+      <div class="cw" id="c-enr"></div>
+    </div>
+    <!-- ANR -->
+    <div class="chart-card">
+      <div class="chart-title">平均贷款余额（ANR）</div>
+      <div class="ytd-tags">
+        <span class="ytag up">YTD ▼同比-6%</span>
+        <span class="ytag flat">YTD ≈达预算</span>
+      </div>
+      <div class="chart-sub">亿元 · 2024年1月起 by 月</div>
+      <div class="cw" id="c-anr"></div>
+    </div>
+    <!-- 新增放款 -->
+    <div class="chart-card">
+      <div class="chart-title">月度新增放款</div>
+      <div class="ytd-tags">
+        <span class="ytag up">YTD ▲同比+3%</span>
+        <span class="ytag up">YTD ▼低于预算-5%</span>
+      </div>
+      <div class="chart-sub">亿元 · 2024年1月起 by 月</div>
+      <div class="cw" id="c-disburse"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── L2 余额结构 ── -->
+<div class="section" id="sec-enr">
+  <div class="section-header">
+    <span class="section-badge badge-l2">L2</span>
+    <span class="section-title">余额结构</span>
+  </div>
+  <div class="charts-grid cg2">
+    <div class="chart-card">
+      <div class="chart-title"> ENR by 定价区间分布</div>
+            <div class="cw" id="c-enr-price"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"> 复贷率趋势</div>
+      <div class="dual-lamp" style="display:inline-flex;margin-bottom:6px;">
+        <div class="lamp-item"><div class="lamp-dot red" onclick="cycleLamp(this,'reloan','cur')"></div><span>现状</span></div>
+        <span style="color:var(--border);margin:0 4px;">·</span>
+        <div class="lamp-item"><div class="lamp-dot red" onclick="cycleLamp(this,'reloan','fwd')"></div><span>预警</span></div>
+      </div>
+      <div class="chart-sub">复贷率 = 当期复贷客户数 / 当期全部客户数</div>
+      <div class="cw" id="c-reloan"></div>
+    </div>
+  </div>
+  <div class="insight-box" style="margin-top:10px;">
+    <div class="insight-header">
+      <span class="insight-label">💡 文字洞察</span>
+      <button class="insight-edit-btn" onclick="toggleEdit('insight-enr')">✏ 编辑</button>
+    </div>
+    <div class="insight-text" id="insight-enr" data-card-id="enr">正在生成洞察...</div>
+    <div class="alert-tags">
+      <span class="atag red" onclick="jumpToAlert('asec-sales-cap')">#直销绩差占比31%</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── L2 新增放款 ── -->
+<div class="section" id="sec-disburse">
+  <div class="section-header">
+    <span class="section-badge badge-l2">L2</span>
+    <span class="section-title">新增放款</span>
+  </div>
+  <div class="charts-grid cg1">
+    <div class="chart-card">
+      <div class="chart-title"> 新增放款 by 定价区间分布</div>
+      <div class="cw" id="c-dis-price"></div>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header">
+      <span class="insight-label">💡 文字洞察</span>
+      <button class="insight-edit-btn" onclick="toggleEdit('insight-dis')">✏ 编辑</button>
+    </div>
+    <div class="insight-text" id="insight-dis" data-card-id="disburse">正在生成洞察...</div>
+  </div>
+</div>
+
+
+<!-- ── L1 ROA 拆解 ── -->
+<div class="section" id="sec-roa">
+  <div class="section-header">
+    <span class="section-badge badge-l1">L1</span>
+    <span class="section-title">ROA 拆解</span>
+    <div class="dual-lamp">
+      <div class="lamp-item"><div class="lamp-dot red" onclick="cycleLamp(this,'roa','cur')"></div><span>现状</span></div>
+      <span style="color:var(--border)">·</span>
+      <div class="lamp-item"><div class="lamp-dot red" onclick="cycleLamp(this,'roa','fwd')"></div><span>预警</span></div>
+    </div>
+  </div>
+  <div class="charts-grid cg2">
+    <div class="chart-card">
+      <div class="chart-title"> ROA 构成瀑布图（年化 YTD）</div>
+      <div class="chart-sub">收益率 − 信贷成本 − 业务成本 − 税及其他 = ROA</div>
+      <div class="cw-lg" id="c-roa-waterfall"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"> ROA 历史趋势</div>
+      <div class="chart-sub">年度 ROA · 2022年起 · 26年展示 YTD 年化</div>
+      <div class="cw-lg" id="c-roa-trend"></div>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header">
+      <span class="insight-label">💡 文字洞察</span>
+      <button class="insight-edit-btn" onclick="toggleEdit('insight-roa')">✏ 编辑</button>
+    </div>
+    <div class="insight-text" id="insight-roa" data-card-id="roa">正在生成洞察...</div>
+    <div class="alert-tags">
+      <span class="atag red" onclick="jumpToAlert('asec-cm3')">#C-M3迁徙率上行</span>
+      <span class="atag red" onclick="jumpToAlert('asec-vintage-heat')">#Vintage-2024Q1早逾恶化</span>
+      <span class="atag yellow">#渤海银行定价上调</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── L2 定价 ── -->
+<div class="section" id="sec-pricing">
+  <div class="section-header">
+    <span class="section-badge badge-l2">L2</span>
+    <span class="section-title">定价</span>
+    <div class="dual-lamp">
+      <div class="lamp-item"><div class="lamp-dot yellow" onclick="cycleLamp(this,'prc','cur')"></div><span>现状</span></div>
+      <span style="color:var(--border)">·</span>
+      <div class="lamp-item"><div class="lamp-dot yellow" onclick="cycleLamp(this,'prc','fwd')"></div><span>预警</span></div>
+    </div>
+  </div>
+  <div class="charts-grid cg1">
+    <div class="chart-card">
+      <div class="chart-title"> 新放款定价趋势（%）</div>
+      <div class="chart-sub">年化利率 % · 2024年1月起 by 月</div>
+      <div class="cw" id="c-pricing"></div>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header">
+      <span class="insight-label">💡 文字洞察</span>
+      <button class="insight-edit-btn" onclick="toggleEdit('insight-pricing')">✏ 编辑</button>
+    </div>
+    <div class="insight-text" id="insight-pricing" data-card-id="pricing">正在生成洞察...</div>
+    <div class="alert-tags">
+      <span class="atag yellow">#渤海银行定价上调</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── L2 风险成本 ── -->
+<div class="section" id="sec-risk">
+  <div class="section-header">
+    <span class="section-badge badge-l2">L2</span>
+    <span class="section-title">风险成本</span>
+    <div class="dual-lamp">
+      <div class="lamp-item"><div class="lamp-dot red" onclick="cycleLamp(this,'risk','cur')"></div><span>现状</span></div>
+      <span style="color:var(--border)">·</span>
+      <div class="lamp-item"><div class="lamp-dot red" onclick="cycleLamp(this,'risk','fwd')"></div><span>预警</span></div>
+    </div>
+  </div>
+  <div class="charts-grid cg2">
+    <div class="chart-card">
+      <div class="chart-title"> 信贷损失率</div>
+      <div class="chart-sub">% ANR · 2024年1月起 · 含预算线及管理红线（8%）</div>
+      <div class="cw" id="c-credit-loss"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"> 年累计清收金额</div>
+      <div class="chart-sub">亿元 · 2024年起 · 实线=实际 虚线=预算</div>
+      <div class="cw" id="c-recovery-amt"></div>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header">
+      <span class="insight-label">💡 文字洞察</span>
+      <button class="insight-edit-btn" onclick="toggleEdit('insight-risk')">✏ 编辑</button>
+    </div>
+    <div class="insight-text" id="insight-risk" data-card-id="risk">正在生成洞察...</div>
+    <div class="alert-tags">
+      <span class="atag red" onclick="jumpToAlert('asec-vintage-heat')">#Vintage-2024Q1早逾恶化</span>
+      <span class="atag red" onclick="jumpToAlert('asec-dpd-prod')">#易贷逾期突增</span>
+      <span class="atag yellow" onclick="jumpToAlert('asec-cm3')">#C-M3迁徙率上行</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── L2 资金成本 ── -->
+<div class="section" id="sec-funding">
+  <div class="section-header">
+    <span class="section-badge badge-l2">L2</span>
+    <span class="section-title">资金成本</span>
+    <div class="dual-lamp">
+      <div class="lamp-item"><div class="lamp-dot green" onclick="cycleLamp(this,'fund','cur')"></div><span>现状</span></div>
+      <span style="color:var(--border)">·</span>
+      <div class="lamp-item"><div class="lamp-dot yellow" onclick="cycleLamp(this,'fund','fwd')"></div><span>预警</span></div>
+    </div>
+  </div>
+  <div class="charts-grid cg2" style="margin-bottom:14px;">
+    <div class="chart-card" style="grid-column:span 2;">
+      <div class="chart-title"> 综合资金成本趋势（%）</div>
+      <div class="chart-sub">年化 YTD · 2024年1月起 · 虚线=26年底预算目标</div>
+      <div class="cw cw-lg" id="c-funding-total"></div>
+    </div>
+  </div>
+  <div class="charts-grid cg-funding-4" style="margin-bottom:14px;">
+    <div class="chart-card">
+      <div class="chart-title">银行</div>
+      <div class="cw cw-sm" id="c-funding-bank"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">信托</div>
+      <div class="cw cw-sm" id="c-funding-trust"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">消金</div>
+      <div class="cw cw-sm" id="c-funding-consumer"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">小贷</div>
+
+      <div class="cw cw-sm" id="c-funding-microloan"></div>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header">
+      <span class="insight-label">💡 文字洞察</span>
+      <button class="insight-edit-btn" onclick="toggleEdit('insight-funding')">✏ 编辑</button>
+    </div>
+    <div class="insight-text" id="insight-funding" data-card-id="funding">正在生成洞察...</div>
+    <div class="alert-tags">
+      <span class="atag yellow">#渤海银行定价上调</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── L2 业务成本 ── -->
+<div class="section" id="sec-opex">
+  <div class="section-header">
+    <span class="section-badge badge-l2">L2</span>
+    <span class="section-title">业务成本</span>
+    <div class="dual-lamp">
+      <div class="lamp-item"><div class="lamp-dot green" onclick="cycleLamp(this,'opex','cur')"></div><span>现状</span></div>
+      <span style="color:var(--border)">·</span>
+      <div class="lamp-item"><div class="lamp-dot green" onclick="cycleLamp(this,'opex','fwd')"></div><span>预警</span></div>
+    </div>
+  </div>
+  <div class="charts-grid cg2">
+    <div class="chart-card">
+      <div class="chart-title"> 销售成本（% ANR，YTD年化）</div>
+      <div class="chart-sub">2024年1月起 · 虚线=26年底预算目标</div>
+      <div class="cw" id="c-sales-cost"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title"> 运营成本（% ANR，YTD年化）</div>
+      <div class="chart-sub">2024年1月起 · 虚线=26年底预算目标</div>
+      <div class="cw" id="c-opex-cost"></div>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header">
+      <span class="insight-label">💡 文字洞察</span>
+      <button class="insight-edit-btn" onclick="toggleEdit('insight-opex')">✏ 编辑</button>
+    </div>
+    <div class="insight-text" id="insight-opex" data-card-id="opex">正在生成洞察...</div>
+  </div>
+</div>
+
+</div><!-- end view-fixed -->
+
+<!-- ============================================================ -->
+<!-- 预警表 -->
+<!-- ============================================================ -->
+<div class="view-alert" id="alert-view-root" style="display:none;">
+
+<!-- L0/L1 汇总行 -->
+<div class="section" id="asec-profit">
+  <div class="section-header">
+    <span class="section-badge" style="background:rgba(248,113,113,.2);color:var(--red);">🚨 L0</span>
+    <span class="section-title">净利润</span>
+    <div class="dual-lamp">
+      <div class="lamp-item"><div class="lamp-dot red"></div><span>现状</span></div>
+      <span style="color:var(--border)">·</span>
+      <div class="lamp-item"><div class="lamp-dot red"></div><span>预警</span></div>
+    </div>
+  </div>
+  <div class="alert-tags">
+    <span class="atag red" onclick="jumpToAlert('asec-vintage-heat')">#Vintage-2024Q1早逾恶化</span>
+    <span class="atag red" onclick="jumpToAlert('asec-dpd-prod')">#易贷逾期突增</span>
+    <span class="atag yellow" onclick="jumpToAlert('asec-cm3')">#C-M3迁徙率上行</span>
+  </div>
+</div>
+
+<!-- ─ L1 贷款规模 ─ -->
+<div class="section" id="asec-scale">
+  <div class="section-header">
+    <span class="section-badge badge-l1">L1</span>
+    <span class="section-title">贷款规模</span>
+  </div>
+</div>
+
+<!-- L3 余额 by 产品类型 -->
+<div class="section" id="asec-enr-prod">
+  <div class="section-header">
+    <span class="section-badge badge-l2">L2</span>
+    <span style="color:var(--muted);font-size:12px;margin-right:4px;">余额</span>
+    <span class="section-badge badge-l3" style="margin-right:4px;">L3</span>
+    <span class="section-title" style="font-size:14px;">余额 by 产品类型</span>
+  </div>
+  <div class="charts-grid cg1">
+    <div class="chart-card">
+      <div class="chart-title">ENR by UPL / 易贷 / 房抵贷 / 车抵贷</div>
+      <div class="chart-sub">亿元 · 2024年1月起 by月 · hover 显示各产品占整体 ENR 百分比</div>
+      <div class="cw-lg" id="c-enr-prod"></div>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header"><span class="insight-label">💡 亮灯与洞察</span><button class="insight-edit-btn" onclick="toggleEdit('ins-enr-prod')">✏ 编辑</button></div>
+    <div class="insight-text" id="ins-enr-prod" data-card-id="enr_product">正在生成洞察...</div>
+  </div>
+</div>
+
+<!-- L3 余额 by Vintage -->
+<div class="section" id="asec-enr-vintage">
+  <div class="section-header">
+    <span class="section-badge" style="background:rgba(248,113,113,.18);color:var(--red);">🔴 L3</span>
+    <span class="section-title" style="font-size:14px;">余额 by Vintage（余额留存曲线）</span>
+    <div class="dual-lamp"><div class="lamp-item"><div class="lamp-dot red"></div><span>现状</span></div><span style="color:var(--border)">·</span><div class="lamp-item"><div class="lamp-dot red"></div><span>预警</span></div></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">各 Vintage 余额留存曲线（ENR / 放款额）</div>
+    <div class="chart-sub">横坐标=MOB · 每半年一条 vintage 曲线 · 2024H1 起</div>
+    <div class="cw-lg" id="c-enr-vintage"></div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header"><span class="insight-label">💡 亮灯与洞察</span><button class="insight-edit-btn" onclick="toggleEdit('ins-enr-vtg')">✏ 编辑</button></div>
+    <div class="insight-text" id="ins-enr-vtg" data-card-id="enr_vintage">正在生成洞察...</div>
+    <div class="alert-tags"><span class="atag red">#余额流失速度加快</span></div>
+  </div>
+</div>
+
+<!-- L3 新增放款 by 产品类型 -->
+<div class="section" id="asec-dis-prod">
+  <div class="section-header">
+    <span class="section-badge badge-l2">L2</span>
+    <span style="color:var(--muted);font-size:12px;margin-right:4px;">新增放款</span>
+    <span class="section-badge badge-l3">L3</span>
+    <span class="section-title" style="font-size:14px;">新增放款 by 产品类型</span>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">月度新增放款 — UPL / 易贷 / 房抵贷 / 车抵贷</div>
+    <div class="chart-sub">亿元 · 2024年1月起 by月 · hover 显示占比</div>
+    <div class="cw" id="c-dis-prod"></div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header"><span class="insight-label">💡 洞察</span><button class="insight-edit-btn" onclick="toggleEdit('ins-dis-prod')">✏ 编辑</button></div>
+    <div class="insight-text" id="ins-dis-prod" data-card-id="disbursement_product">正在生成洞察...</div>
+  </div>
+</div>
+
+<!-- L3 新增放款 by 渠道类型 -->
+<div class="section" id="asec-dis-ch">
+  <div class="section-header">
+    <span class="section-badge badge-l3">L3</span>
+    <span class="section-title" style="font-size:14px;">新增放款 by 渠道类型</span>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">月度新增放款 — 直销 / 综拓 / 银行拒量 / 消金联营</div>
+    <div class="chart-sub">亿元 · 2024年1月起 by月 · hover 显示占比</div>
+    <div class="cw" id="c-dis-ch"></div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header"><span class="insight-label">💡 洞察</span><button class="insight-edit-btn" onclick="toggleEdit('ins-dis-ch')">✏ 编辑</button></div>
+    <div class="insight-text" id="ins-dis-ch" data-card-id="disbursement_channel">正在生成洞察...</div>
+    <div class="alert-tags"><span class="atag yellow">#消金联营压降进展</span></div>
+  </div>
+</div>
+
+<!-- L3 直销队伍：产能 -->
+<div class="section" id="asec-sales-cap">
+  <div class="section-header">
+    <span class="section-badge" style="background:rgba(248,113,113,.18);color:var(--red);">🔴 L3</span>
+    <span class="section-title" style="font-size:14px;">直销队伍：产能</span>
+    <div class="dual-lamp"><div class="lamp-item"><div class="lamp-dot red"></div><span>现状</span></div><span style="color:var(--border)">·</span><div class="lamp-item"><div class="lamp-dot red"></div><span>预警</span></div></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">人均月产能 — 整体 / 农夫型 / 猎人型</div>
+    <div class="chart-sub">万元/人月 · 2024年1月起 · hover 显示各类人数</div>
+    <div class="cw" id="c-sales-cap"></div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header"><span class="insight-label">💡 洞察</span><button class="insight-edit-btn" onclick="toggleEdit('ins-sales-cap')">✏ 编辑</button></div>
+    <div class="insight-text" id="ins-sales-cap" data-card-id="sales_capacity">正在生成洞察...</div>
+    <div class="alert-tags"><span class="atag red">#直销绩差占比31%</span></div>
+  </div>
+</div>
+
+<!-- L3 直销队伍：绩优 vs 绩差 -->
+<div class="section" id="asec-sales-perf">
+  <div class="section-header">
+    <span class="section-badge" style="background:rgba(248,113,113,.18);color:var(--red);">🔴 L3</span>
+    <span class="section-title" style="font-size:14px;">直销队伍：绩优 vs 绩差</span>
+  </div>
+  <div class="charts-grid cg3">
+    <div class="chart-card">
+      <div class="chart-title">图1 — YTD新增销售 by 产能等级</div>
+      <div class="chart-sub">前20% / 20-70% / 后30% · 柱状图</div>
+      <div class="cw-sm" id="c-perf-bar"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">图2 — 月人均产能 by 产能等级</div>
+      <div class="chart-sub">4类员工折线 · 2026年1月起</div>
+      <div class="cw-sm" id="c-perf-line"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">图3 — 员工留存率 by 产能等级</div>
+      <div class="chart-sub">4类员工留存率折线 · 2026年1月起</div>
+      <div class="cw-sm" id="c-perf-retain"></div>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header"><span class="insight-label">💡 洞察</span><button class="insight-edit-btn" onclick="toggleEdit('ins-sales-perf')">✏ 编辑</button></div>
+    <div class="insight-text" id="ins-sales-perf" data-card-id="sales_performance">正在生成洞察...</div>
+    <div class="alert-tags"><span class="atag red">#直销绩差占比31%</span></div>
+  </div>
+</div>
+
+<!-- ─ L1 ROA ─ -->
+<div class="section" id="asec-roa">
+  <div class="section-header">
+    <span class="section-badge badge-l1">L1</span>
+    <span class="section-title">ROA 拆解</span>
+  </div>
+</div>
+
+<!-- L3 定价 by 新客/老客 -->
+<div class="section" id="asec-price-matrix">
+  <div class="section-header">
+    <span class="section-badge badge-l3">L3</span>
+    <span class="section-title" style="font-size:14px;">定价矩阵 — 新老客交叉分析</span>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">放款年份 × 复贷次数 · 新放款平均定价（%）</div>
+    <div class="chart-sub">列=放款年份 · 行=复贷次数 · 热力图 · 值越高颜色越红</div>
+    <div class="heatmap-wrap" id="hm-price-matrix">
+      <table class="heatmap-table">
+        <thead>
+          <tr><th></th><th>24年</th><th>25年</th><th>26年</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="rh">&gt;3次（老客）</td><td id="hm-p-11">18.2</td><td id="hm-p-12">17.8</td><td id="hm-p-13">17.2</td></tr>
+          <tr><td class="rh">2次</td><td id="hm-p-21">19.4</td><td id="hm-p-22">19.1</td><td id="hm-p-23">18.6</td></tr>
+          <tr><td class="rh">1次（新客）</td><td id="hm-p-31">20.8</td><td id="hm-p-32">20.3</td><td id="hm-p-33">19.9</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header"><span class="insight-label">💡 洞察</span><button class="insight-edit-btn" onclick="toggleEdit('ins-price-matrix')">✏ 编辑</button></div>
+    <div class="insight-text" id="ins-price-matrix" data-card-id="pricing_matrix">正在生成洞察...</div>
+  </div>
+</div>
+
+<!-- L3 定价 by 产品类型 -->
+<div class="section" id="asec-price-prod">
+  <div class="section-header">
+    <span class="section-badge badge-l3">L3</span>
+    <span class="section-title" style="font-size:14px;">新放款定价 by 产品类型</span>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">各产品平均定价趋势（%）</div>
+    <div class="chart-sub">2024年1月起 · 折线</div>
+    <div class="cw" id="c-price-prod"></div>
+  </div>
+</div>
+
+<!-- L3 C-M3 迁徙率 -->
+<div class="section" id="asec-cm3">
+  <div class="section-header">
+    <span class="section-badge badge-l3">L3</span>
+    <span class="section-title" style="font-size:14px;">C-M3 迁徙率预警</span>
+    <div class="dual-lamp"><div class="lamp-item"><div class="lamp-dot red"></div><span>现状</span></div><span style="color:var(--border)">·</span><div class="lamp-item"><div class="lamp-dot red"></div><span>预警</span></div></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">月度 C-M3 迁徙率（%）</div>
+    <div class="chart-sub">2024年1月起 · 实线=实际 · 虚线=预算C-M3%</div>
+    <div class="cw" id="c-cm3"></div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header"><span class="insight-label">💡 洞察</span><button class="insight-edit-btn" onclick="toggleEdit('ins-cm3')">✏ 编辑</button></div>
+    <div class="insight-text" id="ins-cm3" data-card-id="cm3">正在生成洞察...</div>
+    <div class="alert-tags"><span class="atag red">#C-M3迁徙率上行</span></div>
+  </div>
+</div>
+
+<!-- L3 Vintage 热力图 -->
+<div class="section" id="asec-vintage-heat">
+  <div class="section-header">
+    <span class="section-badge" style="background:rgba(248,113,113,.18);color:var(--red);">🔴 L3</span>
+    <span class="section-title" style="font-size:14px;">逾期率 by Vintage — 热力图（UPL+易贷）</span>
+    <div class="dual-lamp"><div class="lamp-item"><div class="lamp-dot red"></div><span>现状</span></div><span style="color:var(--border)">·</span><div class="lamp-item"><div class="lamp-dot red"></div><span>预警</span></div></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">dpd5+% · Vintage × MOB 热力图</div>
+    <div class="chart-sub">列=Vintage批次 · 行=账龄(MOB) · 值越高格子越红</div>
+    <div class="heatmap-wrap">
+      <table class="heatmap-table" id="hm-vintage">
+        <thead>
+          <tr>
+            <th>账龄(MOB)</th>
+            <th>24Q1</th><th>24Q2</th><th>24Q3</th><th>24Q4</th><th>25Q1</th><th>25Q2</th><th>25Q3</th><th>25Q4</th><th>26M1</th><th>26M2</th><th>26M3</th>
+          </tr>
+        </thead>
+        <tbody id="hm-vintage-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header"><span class="insight-label">💡 洞察</span><button class="insight-edit-btn" onclick="toggleEdit('ins-vintage')">✏ 编辑</button></div>
+    <div class="insight-text" id="ins-vintage" data-card-id="vintage">正在生成洞察...</div>
+    <div class="alert-tags"><span class="atag red">#Vintage-2024Q1早逾恶化</span></div>
+  </div>
+</div>
+
+<!-- L3 逾期率 by 客群类型 -->
+<div class="section" id="asec-dpd-cust">
+  <div class="section-header">
+    <span class="section-badge badge-l3">L3</span>
+    <span class="section-title" style="font-size:14px;">逾期率 by 客群类型（dpd5+%@MOB3）</span>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">放款年份 × 定价区间 热力图</div>
+    <div class="chart-sub">列=放款年份 · 行=定价区间（&lt;15% / 15%-20% / &gt;20%）</div>
+    <div class="heatmap-wrap">
+      <table class="heatmap-table" id="hm-cust">
+        <thead><tr><th></th><th>24年</th><th>25年</th><th>26年</th></tr></thead>
+        <tbody>
+          <tr><td class="rh">&lt;15%</td><td id="hc-11">2.1</td><td id="hc-12">1.9</td><td id="hc-13">1.8</td></tr>
+          <tr><td class="rh">15%-20%</td><td id="hc-21">3.4</td><td id="hc-22">3.1</td><td id="hc-23">2.9</td></tr>
+          <tr><td class="rh">&gt;20%</td><td id="hc-31">5.2</td><td id="hc-32">4.8</td><td id="hc-33">4.5</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- L3 逾期率 by 新客/老客 -->
+<div class="section" id="asec-dpd-newold">
+  <div class="section-header">
+    <span class="section-badge badge-l3">L3</span>
+    <span class="section-title" style="font-size:14px;">逾期率 by 新客/老客（dpd5+%@MOB3）</span>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">放款年份 × 复贷次数 热力图</div>
+    <div class="chart-sub">列=放款年份 · 行=复贷次数（&gt;3次 / 2次 / 1次新客）</div>
+    <div class="heatmap-wrap">
+      <table class="heatmap-table" id="hm-newold">
+        <thead><tr><th></th><th>24年</th><th>25年</th><th>26年</th></tr></thead>
+        <tbody>
+          <tr><td class="rh">&gt;3次</td><td id="hn-11">2.4</td><td id="hn-12">2.1</td><td id="hn-13">2.0</td></tr>
+          <tr><td class="rh">2次</td><td id="hn-21">3.2</td><td id="hn-22">2.9</td><td id="hn-23">2.7</td></tr>
+          <tr><td class="rh">1次（新客）</td><td id="hn-31">4.8</td><td id="hn-32">4.3</td><td id="hn-33">4.1</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- L3 逾期率 by 产品类型 -->
+<div class="section" id="asec-dpd-prod">
+  <div class="section-header">
+    <span class="section-badge" style="background:rgba(248,113,113,.18);color:var(--red);">🔴 L3</span>
+    <span class="section-title" style="font-size:14px;">逾期率 by 产品类型</span>
+    <div class="dual-lamp"><div class="lamp-item"><div class="lamp-dot red"></div><span>现状</span></div><span style="color:var(--border)">·</span><div class="lamp-item"><div class="lamp-dot red"></div><span>预警</span></div></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">dpd5+% · UPL / 易贷 / 房抵贷 / 车抵贷</div>
+    <div class="chart-sub">2024年1月起 by月 · 折线</div>
+    <div class="cw" id="c-dpd-prod"></div>
+  </div>
+  <div class="insight-box">
+    <div class="insight-header"><span class="insight-label">💡 洞察</span><button class="insight-edit-btn" onclick="toggleEdit('ins-dpd-prod')">✏ 编辑</button></div>
+    <div class="insight-text" id="ins-dpd-prod" data-card-id="dpd_product">正在生成洞察...</div>
+    <div class="alert-tags"><span class="atag red">#易贷逾期突增</span></div>
+  </div>
+</div>
+
+<!-- L3 回收率 by Vintage -->
+<div class="section" id="asec-recovery">
+  <div class="section-header">
+    <span class="section-badge badge-l3">L3</span>
+    <span class="section-title" style="font-size:14px;">回收率 % by Vintage（理赔后回收）</span>
+  </div>
+  <div class="charts-grid cg2">
+    <div class="chart-card">
+      <div class="chart-title">UPL（不含易贷）理赔回收率</div>
+      <div class="chart-sub">列=理赔批次 · 行=放款年份 · %</div>
+      <div class="heatmap-wrap">
+        <table class="heatmap-table">
+          <thead><tr><th style="min-width:70px">放款年份</th><th>21年及以前</th><th>22年</th><th>23年</th><th>24年</th><th>25年</th><th>26年</th></tr></thead>
+          <tbody id="hm-recov-upl"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">易贷理赔回收率</div>
+      <div class="chart-sub">列=理赔批次 · 行=放款年份 · %</div>
+      <div class="heatmap-wrap">
+        <table class="heatmap-table">
+          <thead><tr><th style="min-width:70px">放款年份</th><th>24年</th><th>25年</th><th>26年</th></tr></thead>
+          <tbody id="hm-recov-yd"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- L3 拨备覆盖率 -->
+<div class="section" id="asec-llr">
+  <div class="section-header">
+    <span class="section-badge badge-l3">L3</span>
+    <span class="section-title" style="font-size:14px;">拨备覆盖率</span>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">拨备覆盖率（%）· 及分子/分母明细</div>
+    <div class="chart-sub">2024年1月起 by月 · 折线 + 下方表格：拨备余额 / 不良资产余额（亿元）</div>
+    <div class="cw" id="c-llr"></div>
+    <table class="data-table" style="margin-top:8px;" id="tbl-llr"></table>
+  </div>
+</div>
+
+</div><!-- end view-alert -->
+</main>
+
+<!-- 弹窗 -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h3 id="modal-title">预警详情</h3>
+    <p id="modal-body">加载中…</p>
+  </div>
+</div>
+
+<script>
+if(typeof CURRENT_PERIOD==='undefined'){
+  var CURRENT_PERIOD='2026-03-YTD';
+}
+
+// ================================================================
+// 数据生成工具
+// ================================================================
+var M24=[]; for(var i=0;i<24;i++){var d=new Date(2024,0+i,1);M24.push(d.getFullYear()+'/'+(d.getMonth()+1)+'月');}
+var M16=[]; for(var i=0;i<16;i++){var d=new Date(2024,0+i,1);M16.push(d.getFullYear()+'/'+(d.getMonth()+1)+'月');}
+var M15_25=[]; for(var i=0;i<15;i++){var d=new Date(2025,0+i,1);M15_25.push(d.getFullYear()+'/'+(d.getMonth()+1)+'月');}
+
+function trend(start,end,n,noise){
+  var arr=[],step=(end-start)/(n-1);
+  for(var i=0;i<n;i++){
+    var r=start+step*i+(Math.random()-0.5)*noise*2;
+    arr.push(+r.toFixed(2));
+  }
+  return arr;
+}
+function randArr(base,n,noise){
+  var a=[];for(var i=0;i<n;i++)a.push(+(base+(Math.random()-0.5)*noise*2).toFixed(2));return a;
+}
+
+function normalizeInsightList(items){
+  if(!items) return [];
+  return Array.isArray(items)?items:[items];
+}
+function insightItemText(item){
+  if(item==null) return '';
+  if(typeof item==='string') return item;
+  if(typeof item==='number' || typeof item==='boolean') return String(item);
+  return item.label || item.title || item.name || item.text || item.driver || item.item || JSON.stringify(item);
+}
+function appendInsightTags(root,title,items,bg,color){
+  var list=normalizeInsightList(items).map(insightItemText).filter(Boolean);
+  if(!list.length) return;
+  var wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;';
+  var label=document.createElement('span');
+  label.textContent=title;
+  label.style.cssText='font-size:11px;color:var(--muted);margin-right:2px;';
+  wrap.appendChild(label);
+  list.forEach(function(text){
+    var tag=document.createElement('span');
+    tag.textContent=text;
+    tag.style.cssText='display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;background:'+bg+';color:'+color+';font-size:11px;line-height:1.5;';
+    wrap.appendChild(tag);
+  });
+  root.appendChild(wrap);
+}
+function appendInsightEvidence(root,evidence){
+  var list=normalizeInsightList(evidence).map(insightItemText).filter(Boolean);
+  if(!list.length) return;
+  var details=document.createElement('details');
+  details.style.cssText='margin-top:8px;color:var(--muted);font-size:11px;';
+  var summary=document.createElement('summary');
+  summary.textContent='查看依据';
+  summary.style.cursor='pointer';
+  details.appendChild(summary);
+  list.forEach(function(text){
+    var item=document.createElement('div');
+    item.textContent=text;
+    item.style.cssText='margin-top:5px;padding-left:10px;border-left:2px solid var(--border);';
+    details.appendChild(item);
+  });
+  root.appendChild(details);
+}
+function renderCardInsight(el,data){
+  el.innerHTML='';
+  var body=document.createElement('div');
+  body.textContent=(data && data.insight) ? data.insight : '正在生成洞察...';
+  el.appendChild(body);
+  if(!data) return;
+  appendInsightTags(el,'驱动',data.drivers,'rgba(79,142,247,.16)','var(--accent)');
+  appendInsightTags(el,'关注',data.watch_items,'rgba(251,191,36,.16)','var(--yellow)');
+  appendInsightEvidence(el,data.evidence);
+}
+
+var _insightPollTimers=[];
+function _clearInsightPollTimers(){
+  _insightPollTimers.forEach(function(t){clearInterval(t);});
+  _insightPollTimers=[];
+}
+
+function loadInsightPageState(period){
+  _clearInsightPollTimers();
+  fetch('/api/insights/page-state?period='+encodeURIComponent(period))
+    .then(function(resp){ if(!resp.ok) throw new Error('HTTP '+resp.status); return resp.json(); })
+    .then(function(state){
+      var cards=state.cards||[];
+      cards.forEach(function(c){
+        var el=document.querySelector('.insight-text[data-card-id="'+c.card_id+'"]');
+        if(!el) return;
+        if(c.status==='ready'){
+          renderCardInsightFromCache(el,c);
+        } else if(c.status==='running'||c.status==='pending'){
+          el.textContent='洞察生成中...';
+          el.style.cursor='default';
+          el.onclick=null;
+        } else if(c.status==='failed'){
+          el.textContent=c.standard_insight||'洞察生成失败，请点击刷新重试';
+          el.style.cursor='pointer';
+          el.onclick=function(){ el.style.cursor=''; el.onclick=null; refreshOneCardInsight(c.card_id); };
+        } else {
+          el.textContent='洞察尚未生成';
+          el.style.cursor='pointer';
+          el.onclick=function(){ el.style.cursor=''; el.onclick=null; refreshOneCardInsight(c.card_id); };
+        }
+      });
+      updateInsightProgressBar(state);
+      var activeJobs=state.active_jobs||[];
+      if(activeJobs.length>0){
+        activeJobs.forEach(function(job){
+          pollJobStatus(job.job_id,period);
+        });
+      } else if(cards.some(function(c){return c.status==='missing';})){
+        triggerMissingInsights(period);
+      } else {
+        var bar2=document.getElementById('ai-insight-progress');
+        if(bar2) bar2.style.display='none';
+      }
+    })
+    .catch(function(err){
+      console.warn('loadInsightPageState failed',err);
+      var els=Array.from(document.querySelectorAll('.insight-text[data-card-id]'));
+      els.forEach(function(el){ el.textContent='洞察加载失败'; });
+    });
+}
+
+function triggerMissingInsights(period){
+  fetch('/api/insights/jobs',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({period:period,scope:'all',force_refresh:false})
+  }).then(function(resp){ if(!resp.ok) throw new Error('HTTP '+resp.status); return resp.json(); })
+    .then(function(data){
+      if(data.job_id){
+        pollJobStatus(data.job_id,period);
+      }
+    }).catch(function(err){ console.warn('triggerMissingInsights failed',err); });
+}
+
+function renderCardInsightFromCache(el,c){
+  el.innerHTML='';
+  var body=document.createElement('div');
+  body.textContent=c.standard_insight||'';
+  el.appendChild(body);
+  appendInsightTags(el,'驱动',c.drivers,'rgba(79,142,247,.16)','var(--accent)');
+  appendInsightTags(el,'关注',c.watch_items,'rgba(251,191,36,.16)','var(--yellow)');
+  appendInsightEvidence(el,c.evidence);
+  var btn=document.createElement('span');
+  btn.textContent='🔄刷新';
+  btn.title='刷新此卡片AI洞察';
+  btn.style.cssText='cursor:pointer;font-size:10px;color:var(--muted);margin-left:6px;user-select:none;';
+  btn.onclick=function(e){e.stopPropagation();refreshOneCardInsight(c.card_id);};
+  el.appendChild(btn);
+}
+
+function pollJobStatus(jobId,period){
+  var timer=setInterval(function(){
+    fetch('/api/insights/jobs/'+jobId)
+      .then(function(resp){ if(!resp.ok) throw new Error('HTTP '+resp.status); return resp.json(); })
+      .then(function(job){
+        updateInsightProgressBar(job);
+        if(job.status==='finished'||job.status==='partial_failed'||job.status==='failed'){
+          clearInterval(timer);
+          loadInsightPageState(period);
+          return;
+        }
+        (job.items||[]).forEach(function(it){
+          if(it.status==='ready'){
+            var el=document.querySelector('.insight-text[data-card-id="'+it.card_id+'"]');
+            if(el && el.textContent.indexOf('生成中')>=0){
+              el.textContent='已生成，加载中...';
+            }
+          }
+        });
+      })
+      .catch(function(err){
+        console.warn('pollJobStatus failed',jobId,err);
+      });
+  },3000);
+  _insightPollTimers.push(timer);
+}
+
+function updateInsightProgressBar(stateOrJob){
+  var bar=document.getElementById('ai-insight-progress');
+  if(!bar) return;
+  var total,finished,failed,status;
+  if(stateOrJob.active_jobs){
+    var jobs=stateOrJob.active_jobs;
+    if(!jobs.length){bar.style.display='none';return;}
+    total=0;finished=0;failed=0;status='running';
+    jobs.forEach(function(j){total+=j.total_count||0;finished+=j.finished_count||0;failed+=j.failed_count||0;});
+  } else {
+    total=stateOrJob.total_count||0;
+    finished=stateOrJob.finished_count||0;
+    failed=stateOrJob.failed_count||0;
+    status=stateOrJob.status||'';
+  }
+  if(!total || status==='finished' || status==='partial_failed' || status==='failed'){
+    bar.style.display='none';
+    return;
+  }
+  bar.style.display='flex';
+  var pct=total>0?Math.round((finished+failed)/total*100):0;
+  bar.innerHTML='<span style="font-size:11px;color:var(--accent);">AI洞察生成进度：'+(finished)+'/'+total+' 完成'+(failed?'，'+failed+' 失败':'')+' ('+pct+'%)</span>' +
+    '<div style="flex:1;height:6px;background:var(--surface);border-radius:3px;overflow:hidden;margin:0 10px;"><div style="width:'+pct+'%;height:100%;background:var(--accent);border-radius:3px;transition:width .3s;"></div></div>';
+}
+
+function refreshAllInsights(){
+  fetch('/api/insights/jobs',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({period:CURRENT_PERIOD,scope:'all',force_refresh:true})
+  }).then(function(resp){ if(!resp.ok) throw new Error('HTTP '+resp.status); return resp.json(); })
+    .then(function(data){
+      if(data.job_id){
+        var els=Array.from(document.querySelectorAll('.insight-text[data-card-id]'));
+        els.forEach(function(el){ el.textContent='洞察生成中...'; el.style.cursor='default'; el.onclick=null; });
+        pollJobStatus(data.job_id,CURRENT_PERIOD);
+      }
+    }).catch(function(err){ console.warn('refreshAllInsights failed',err); });
+}
+
+function refreshOneCardInsight(cardId){
+  var el=document.querySelector('.insight-text[data-card-id="'+cardId+'"]');
+  if(el){ el.textContent='洞察生成中...'; el.style.cursor='default'; el.onclick=null; }
+  fetch('/api/insights/jobs',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({period:CURRENT_PERIOD,scope:'card',card_ids:[cardId],force_refresh:true})
+  }).then(function(resp){ if(!resp.ok) throw new Error('HTTP '+resp.status); return resp.json(); })
+    .then(function(data){
+      if(data.job_id) pollJobStatus(data.job_id,CURRENT_PERIOD);
+      else if(el) loadInsightPageState(CURRENT_PERIOD);
+    }).catch(function(err){ console.warn('refreshOneCardInsight failed',cardId,err); });
+}
+function saveManualOverride(el){
+  if(!el) return;
+  fetch('/api/insights/manual-override',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      period:CURRENT_PERIOD,
+      card_id:el.getAttribute('data-card-id'),
+      element_id:el.id,
+      insight:el.innerText.trim()
+    })
+  }).then(function(resp){
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+  }).catch(function(err){
+    console.warn('save manual override failed',el.id,err);
+  });
+}
+
+var BASE={
+  backgroundColor:'transparent',
+  textStyle:{color:'#e2e8f0'},
+  tooltip:{trigger:'axis',backgroundColor:'#1a1d27',borderColor:'#2e3354',textStyle:{color:'#e2e8f0'}},
+  grid:{left:'2%',right:'3%',top:36,bottom:20,containLabel:true},
+  xAxis:{type:'category',axisLine:{lineStyle:{color:'#2e3354'}},axisTick:{show:false},axisLabel:{color:'#94a3b8',fontSize:10,rotate:30}},
+  yAxis:{type:'value',splitLine:{lineStyle:{color:'#1e2235'}},axisLabel:{color:'#94a3b8',fontSize:10}},
+};
+var _charts={};
+function initLazy(id,opt){
+  _charts[id]={opt:opt,done:false};
+}
+function flushLazy(){
+  Object.keys(_charts).forEach(function(id){
+    var rec=_charts[id];
+    if(rec.done) return;
+    var el=document.getElementById(id);
+    if(!el){return;}
+    var w=el.offsetWidth||el.parentElement.offsetWidth||0;
+    var h=el.offsetHeight||el.parentElement.offsetHeight||0;
+    if(w===0&&h===0){return;}
+    try{
+      var chart=echarts.init(el);
+      chart.setOption(rec.opt);
+      (function(c){window.addEventListener('resize',function(){try{c.resize();}catch(e){}});})(chart);
+      rec.done=true; rec.inst=chart;
+    }catch(e){console.warn('[Chart Init Error]',id,e.message);}
+  });
+}
+// Re-flush after switching views
+function flushView(){setTimeout(flushLazy,120);}
+
+
+// ================================================================
+// 视图切换
+// ================================================================
+function switchView(v){
+  var isAlert=(v==='alert');
+  document.body.classList.toggle('alert-view',isAlert);
+  document.getElementById('btn-fixed').classList.toggle('active',!isAlert);
+  document.getElementById('btn-alert').classList.toggle('active',isAlert);
+  // 导航
+  document.getElementById('nav-fixed').style.display=isAlert?'none':'block';
+  document.getElementById('nav-alert').style.display=isAlert?'block':'none';
+  // 杜邦
+  document.getElementById('dupont-bar').style.display=isAlert?'none':'';
+  document.getElementById('dupont-bar-alert').style.display=isAlert?'':'none';
+  // 内容区
+  document.querySelectorAll('.view-fixed').forEach(function(el){el.style.display=isAlert?'none':'block';});
+  document.querySelectorAll('.view-alert').forEach(function(el){el.style.display=isAlert?'block':'none';});
+  // 激活第一项
+  var firstNav=document.querySelector('#nav-'+(isAlert?'alert':'fixed')+' .nav-level');
+  if(firstNav) firstNav.classList.add('active');
+  // 延迟初始化隐藏时未能渲染的图表
+  setTimeout(flushLazy,150);
+}
+
+// ================================================================
+// 导航联动
+// ================================================================
+function navClick(el,secId){
+  var navId=(document.body.classList.contains('alert-view')?'nav-alert':'nav-fixed');
+  document.querySelectorAll('#'+navId+' .nav-level').forEach(function(n){n.classList.remove('active');});
+  if(el) el.classList.add('active');
+  var sec=document.getElementById(secId);
+  if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'});
+  syncDupontLogic(secId);
+}
+
+function jumpToAlert(secId){
+  switchView('alert');
+  setTimeout(function(){
+    var sec=document.getElementById(secId);
+    if(sec) sec.scrollIntoView({behavior:'smooth',block:'start'});
+  },100);
+}
+
+// 滚动监听 - 杜邦高亮
+(function(){
+  var sections=['sec-profit','sec-scale','sec-enr','sec-disburse','sec-roa','sec-pricing','sec-risk','sec-funding','sec-opex'];
+  var dpMap={'sec-profit':'dp-profit','sec-scale':'dp-scale','sec-enr':'dp-scale','sec-disburse':'dp-scale','sec-roa':'dp-roa','sec-pricing':'dp-pricing','sec-risk':'dp-risk','sec-funding':'dp-funding','sec-opex':'dp-opex'};
+  var navMap={'sec-profit':'[data-sec=sec-profit]','sec-scale':'[data-sec=sec-scale]','sec-enr':'[data-sec=sec-enr]','sec-disburse':'[data-sec=sec-disburse]','sec-roa':'[data-sec=sec-roa]','sec-pricing':'[data-sec=sec-pricing]','sec-risk':'[data-sec=sec-risk]','sec-funding':'[data-sec=sec-funding]','sec-opex':'[data-sec=sec-opex]'};
+  window.addEventListener('scroll',function(){
+    if(document.body.classList.contains('alert-view')) return;
+    var current='';
+    sections.forEach(function(id){
+      var el=document.getElementById(id);
+      if(el && el.getBoundingClientRect().top<=120) current=id;
+    });
+    if(!current) return;
+    // 杜邦高亮
+    document.querySelectorAll('.dp-box').forEach(function(b){b.classList.remove('active');});
+    var dpId=dpMap[current];
+    if(dpId){var d=document.getElementById(dpId);if(d)d.classList.add('active');}
+    syncDupontLogic(current);
+    // 侧导高亮
+    document.querySelectorAll('#nav-fixed .nav-level').forEach(function(n){n.classList.remove('active');});
+    var sel=navMap[current];
+    if(sel){var n=document.querySelector('#nav-fixed '+sel);if(n)n.classList.add('active');}
+  });
+})();
+
+function syncDupontLogic(secId){
+  var bar=document.getElementById('dupont-logic-bar');
+  if(!bar) return;
+  bar.querySelectorAll('.dp-pill').forEach(function(node){
+    node.classList.remove('active');
+    var target=node.getAttribute('data-target');
+    if(target===secId || (secId==='sec-enr'&&target==='sec-scale') || (secId==='sec-disburse'&&target==='sec-scale')){
+      node.classList.add('active');
+    }
+  });
+}
+
+// ================================================================
+// 双灯循环
+// ================================================================
+var LAMP_COLORS=['red','yellow','green'];
+function cycleLamp(dotEl,key,type){
+  var cur=LAMP_COLORS.find(function(c){return dotEl.classList.contains(c);})||'green';
+  var next=LAMP_COLORS[(LAMP_COLORS.indexOf(cur)+1)%3];
+  LAMP_COLORS.forEach(function(c){dotEl.classList.remove(c);});
+  dotEl.classList.add(next);
+}
+
+// ================================================================
+// 洞察编辑
+// ================================================================
+function toggleEdit(id){
+  var el=document.getElementById(id);
+  if(!el) return;
+  var btn=el.parentElement.querySelector('.insight-edit-btn');
+  var editing=el.contentEditable==='true';
+  el.contentEditable=editing?'false':'true';
+  btn.textContent=editing?'✏ 编辑':'✅ 完成';
+  btn.classList.toggle('editing',!editing);
+  if(editing) saveManualOverride(el);
+  else el.focus();
+}
+
+// ================================================================
+// 折叠
+// ================================================================
+function toggleCollapse(id){
+  var el=document.getElementById(id);
+  var icon=document.getElementById(id+'-icon');
+  if(!el) return;
+  el.classList.toggle('open');
+  if(icon) icon.textContent=el.classList.contains('open')?'▼':'▶';
+}
+
+// ================================================================
+// 弹窗
+// ================================================================
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+
+// ================================================================
+// 热力图着色
+// ================================================================
+function colorHeatmap(tableEl,minVal,maxVal){
+  if(!tableEl) return;
+  tableEl.querySelectorAll('td:not(.rh):not(.na)').forEach(function(td){
+    var v=parseFloat(td.textContent);
+    if(isNaN(v)){td.classList.add('na');return;}
+    var ratio=(v-minVal)/(maxVal-minVal||1);
+    ratio=Math.max(0,Math.min(1,ratio));
+    var r=Math.round(248*ratio+52*(1-ratio));
+    var g=Math.round(113*ratio+211*(1-ratio));
+    var b=Math.round(113*ratio+153*(1-ratio));
+    td.style.background='rgba('+r+','+g+','+b+',0.25)';
+    td.style.color='rgb('+r+','+g+','+b+')';
+  });
+}
+
+// ================================================================
+// 初始化热力图数据（Vintage）
+// ================================================================
+function buildVintageHeatmap(){
+  var body=document.getElementById('hm-vintage-body');
+  if(!body) return;
+  var vintages=['24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26M1','26M2','26M3'];
+  var mobs=[3,6,9,12,18,24,30,36];
+  var baseData={
+    '24Q1':[4.2,6.8,8.1,9.2,10.5,11.2,null,null],
+    '24Q2':[3.8,6.1,7.4,8.3,9.5,null,null,null],
+    '24Q3':[3.5,5.7,6.9,7.8,null,null,null,null],
+    '24Q4':[3.2,5.4,6.5,null,null,null,null,null],
+    '25Q1':[3.0,5.1,null,null,null,null,null,null],
+    '25Q2':[2.9,null,null,null,null,null,null,null],
+    '25Q3':[2.8,null,null,null,null,null,null,null],
+    '25Q4':[null,null,null,null,null,null,null,null],
+    '26M1':[2.7,null,null,null,null,null,null,null],
+    '26M2':[null,null,null,null,null,null,null,null],
+    '26M3':[null,null,null,null,null,null,null,null],
+  };
+  body.innerHTML='';
+  mobs.forEach(function(mob,i){
+    var tr=document.createElement('tr');
+    var tdh=document.createElement('td');
+    tdh.className='rh'; tdh.textContent='MOB'+mob; tr.appendChild(tdh);
+    vintages.forEach(function(vtg){
+      var td=document.createElement('td');
+      var v=baseData[vtg][i];
+      if(v===null){td.textContent='—';td.classList.add('na');}
+      else{td.textContent=v.toFixed(1)+'%';}
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+  colorHeatmap(document.getElementById('hm-vintage'),2,12);
+}
+
+// ================================================================
+// 初始化回收率热力图
+// ================================================================
+function buildRecovHeatmaps(){
+  var batch6=['21年及以前','22年','23年','24年','25年','26年'];
+  var batch3=['24年','25年','26年'];
+  var bodyUpl=document.getElementById('hm-recov-upl');
+  var bodyYd=document.getElementById('hm-recov-yd');
+  var uplData=[
+    [78,72,68,62,55,48],
+    [null,75,70,64,57,50],
+    [null,null,72,66,59,52],
+    [null,null,null,68,62,55],
+    [null,null,null,null,65,58],
+    [null,null,null,null,null,62],
+  ];
+  var ydData=[
+    [68,62,55],
+    [null,65,58],
+    [null,null,60],
+  ];
+  var loanYears6=['21年','22年','23年','24年','25年','26年'];
+  if(bodyUpl){
+    bodyUpl.innerHTML='';
+    loanYears6.forEach(function(ly,yi){
+      var tr=document.createElement('tr');
+      var tdh=document.createElement('td');tdh.className='rh';tdh.textContent=ly;tr.appendChild(tdh);
+      batch6.forEach(function(b,bi){
+        var td=document.createElement('td');
+        var v=uplData[bi][yi];
+        if(v===null){td.textContent='—';td.classList.add('na');}
+        else{td.textContent=v+'%';}
+        tr.appendChild(td);
+      });
+      bodyUpl.appendChild(tr);
+    });
+    colorHeatmap(bodyUpl.closest('table'),40,80);
+  }
+  if(bodyYd){
+    bodyYd.innerHTML='';
+    batch3.forEach(function(ly,yi){
+      var tr=document.createElement('tr');
+      var tdh=document.createElement('td');tdh.className='rh';tdh.textContent=ly;tr.appendChild(tdh);
+      batch3.forEach(function(b,bi){
+        var td=document.createElement('td');
+        var v=ydData[bi][yi];
+        if(v===null){td.textContent='—';td.classList.add('na');}
+        else{td.textContent=v+'%';}
+        tr.appendChild(td);
+      });
+      bodyYd.appendChild(tr);
+    });
+    colorHeatmap(bodyYd.closest('table'),35,70);
+  }
+}
+
+// ================================================================
+// 初始化定价热力图着色
+// ================================================================
+function colorStaticHeatmaps(){
+  colorHeatmap(document.getElementById('hm-price-matrix'),17,21);
+  colorHeatmap(document.getElementById('hm-cust'),1.5,5.5);
+  colorHeatmap(document.getElementById('hm-newold'),1.5,5.5);
+}
+
+// ================================================================
+// 拨备覆盖率表格
+// ================================================================
+function buildLlrTable(){
+  var tbl=document.getElementById('tbl-llr');
+  if(!tbl) return;
+  var months=['24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1','26M2','26M3'];
+  var llr=[185,178,172,168,162,158,155,153,152,151,150];
+  var prov=[42.0,41.2,40.5,39.8,39.0,38.5,38.2,38.0,37.5,37.2,36.8];
+  var npl=[22.7,23.2,23.5,23.7,24.1,24.4,24.7,24.9,25.0,25.2,25.3];
+  var html='<thead><tr><th style="text-align:left;min-width:140px">指标</th>';
+  months.forEach(function(m){html+='<th style="min-width:50px">'+m+'</th>';});
+  html+='</tr></thead><tbody>';
+  // 拨备余额
+  html+='<tr><td style="text-align:left">拨备余额（亿元）</td>';
+  prov.forEach(function(v){var c=v<38?'color:var(--red)':v<39?'color:var(--yellow)':'color:var(--green)';html+='<td style="'+c+'">'+v.toFixed(1)+'</td>';});
+  html+='</tr>';
+  // 不良资产
+  html+='<tr><td style="text-align:left">不良资产余额（亿元）</td>';
+  npl.forEach(function(v){var c=v>25?'color:var(--red)':v>24?'color:var(--yellow)':'color:var(--green)';html+='<td style="'+c+'">'+v.toFixed(1)+'</td>';});
+  html+='</tr>';
+  // 覆盖率
+  html+='<tr style="font-weight:700;border-top:2px solid var(--border)"><td style="text-align:left">拨备覆盖率（%）</td>';
+  llr.forEach(function(v,i){var ratio=prov[i]/npl[i]*100;var c=v<150?'color:var(--red);background:rgba(248,113,113,.08)':v<160?'color:var(--yellow)':'color:var(--green)';html+='<td style="'+c+'">'+v.toFixed(0)+'%</td>';});
+  html+='</tr></tbody>';
+  tbl.innerHTML=html;
+}
+
+// ================================================================
+// ECharts 图表初始化
+// ================================================================
+window.addEventListener('DOMContentLoaded', function(){
+  loadInsightPageState(CURRENT_PERIOD);
+
+  initLazy('c-profit-m',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    series:[{
+      name:'管理口径净利润',type:'bar',
+      data:[-1.2,-1.5,-1.8,-1.4,-1.6,-1.9,-2.1,-1.8,-1.5,-1.3,-1.0,-0.8,-1.0,-1.2,-1.5,-1.4,-1.6,-1.8,-1.5,-1.2,-1.0,-0.9,-0.8,-0.9],
+      itemStyle:{color:function(p){return p.data>=0?'#34d399':'#f87171';},borderRadius:3}
+    }]
+  });
+
+  initLazy('c-revenue-m',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    series:[
+      {name:'总收入',type:'bar',data:trend(38,28,24,4),itemStyle:{color:'#4f8ef7',borderRadius:[3,3,0,0]}},
+      {name:'总成本',type:'bar',data:trend(40,30,24,4),itemStyle:{color:'#fb923c',borderRadius:[3,3,0,0]}}
+    ]
+  });
+
+  initLazy('c-profit-entity1',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    series:[{
+      name:'主体①',type:'bar',
+      data:trend(-0.8,-0.55,24,0.12).map(function(v){return +v.toFixed(2);}),
+      itemStyle:{color:function(p){return p.data>=0?'#34d399':'#4f8ef7';},borderRadius:3}
+    }]
+  });
+
+  initLazy('c-profit-entity2',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    series:[{
+      name:'主体②',type:'bar',
+      data:trend(-0.3,0.15,24,0.08).map(function(v){return +v.toFixed(2);}),
+      itemStyle:{color:function(p){return p.data>=0?'#34d399':'#fb923c';},borderRadius:3}
+    }]
+  });
+
+  initLazy('c-profit-entity3',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    series:[{
+      name:'主体③',type:'bar',
+      data:trend(-0.12,-0.08,24,0.04).map(function(v){return +v.toFixed(2);}),
+      itemStyle:{color:function(p){return p.data>=0?'#34d399':'#fbbf24';},borderRadius:3}
+    }]
+  });
+
+  // ── 规模三图 ──
+  initLazy('c-enr',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    series:[{
+      name:'ENR',type:'bar',data:trend(1250,980,24,30),
+      itemStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'#4f8ef7'},{offset:1,color:'rgba(79,142,247,.3)'}]}},
+    },{name:'预算',type:'line',data:trend(1300,1100,24,10),lineStyle:{color:'#fbbf24',type:'dashed',width:1.5},itemStyle:{color:'#fbbf24'},symbol:'none'}]
+  });
+  initLazy('c-anr',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    series:[{
+      name:'ANR',type:'bar',data:trend(1180,960,24,25),
+      itemStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'#7c5cfc'},{offset:1,color:'rgba(124,92,252,.3)'}]}},
+    },{name:'预算',type:'line',data:trend(1220,1050,24,8),lineStyle:{color:'#fbbf24',type:'dashed',width:1.5},itemStyle:{color:'#fbbf24'},symbol:'none'}]
+  });
+  initLazy('c-disburse',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    series:[{
+      name:'新增放款',type:'bar',data:trend(68,72,24,8),
+      itemStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'#34d399'},{offset:1,color:'rgba(52,211,153,.3)'}]}},
+    },{name:'预算',type:'line',data:trend(72,78,24,5),lineStyle:{color:'#fbbf24',type:'dashed',width:1.5},itemStyle:{color:'#fbbf24'},symbol:'none'}]
+  });
+
+  // ── ENR 定价区间 ──
+  var enrP1=trend(380,290,15,15),enrP2=trend(520,430,15,20),enrP3=trend(280,340,15,15);
+  initLazy('c-enr-price',{
+    xAxis:{...BASE.xAxis,data:M15_25},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    legend:{top:4,textStyle:{color:'#94a3b8',fontSize:10}},
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    series:[
+      {name:'区间1(<15%)',type:'bar',stack:'s',data:enrP1,itemStyle:{color:'rgba(52,211,153,.7)'}},
+      {name:'区间2(15-20%)',type:'bar',stack:'s',data:enrP2,itemStyle:{color:'rgba(251,191,36,.7)'}},
+      {name:'区间3(>20%)',type:'bar',stack:'s',data:enrP3,itemStyle:{color:'rgba(248,113,113,.7)'}},
+    ]
+  });
+
+  // ── 复贷率 ──
+  initLazy('c-reloan',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,min:15,max:35,axisLabel:{formatter:function(v){return v+'%';}}},
+    series:[
+      {name:'整体复贷率',type:'line',smooth:true,data:trend(28,21,24,1.5),lineStyle:{color:'#4f8ef7',width:2},itemStyle:{color:'#4f8ef7'},areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(79,142,247,.35)'},{offset:1,color:'rgba(79,142,247,.02)'}]}}},
+      {name:'老客复贷率',type:'line',smooth:true,data:trend(32,25,24,1.5),lineStyle:{color:'#34d399',width:1.5,type:'dashed'},itemStyle:{color:'#34d399'},symbol:'none'},
+      {name:'新客转化率',type:'line',smooth:true,data:trend(18,14,24,1),lineStyle:{color:'#fbbf24',width:1.5,type:'dashed'},itemStyle:{color:'#fbbf24'},symbol:'none'},
+    ]
+  });
+
+  // ── 新增放款定价区间 ──
+  var disP1=trend(18,15,15,2),disP2=trend(32,28,15,3),disP3=trend(22,25,15,2);
+  initLazy('c-dis-price',{
+    xAxis:{...BASE.xAxis,data:M15_25},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    legend:{top:4,textStyle:{color:'#94a3b8',fontSize:10}},
+    series:[
+      {name:'区间1(<15%)',type:'bar',stack:'s',data:disP1,itemStyle:{color:'rgba(52,211,153,.7)'}},
+      {name:'区间2(15-20%)',type:'bar',stack:'s',data:disP2,itemStyle:{color:'rgba(251,191,36,.7)'}},
+      {name:'区间3(>20%)',type:'bar',stack:'s',data:disP3,itemStyle:{color:'rgba(248,113,113,.7)'}},
+    ]
+  });
+
+  // ── ROA 瀑布图 ──
+  initLazy('c-roa-waterfall',{
+    xAxis:{type:'category',data:['收益率','−信贷成本','−业务成本','−税及其他','= ROA'],axisLine:{lineStyle:{color:'#2e3354'}},axisTick:{show:false},axisLabel:{color:'#94a3b8',fontSize:10.5}},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'%';}}},
+    tooltip:{trigger:'item',formatter:function(p){return p.name+': '+p.value+'%';}},
+    series:[{
+      type:'bar',
+      data:[
+        {value:19.2,itemStyle:{color:'#4f8ef7'}},
+        {value:-7.8,itemStyle:{color:'#f87171'}},
+        {value:-2.9,itemStyle:{color:'#fb923c'}},
+        {value:-1.7,itemStyle:{color:'#94a3b8'}},
+        {value:6.8,itemStyle:{color:'#34d399'}},
+      ],
+      label:{show:true,position:'top',color:'#e2e8f0',fontSize:11,formatter:function(p){return p.value+'%';}},
+    }]
+  });
+
+  // ── ROA 趋势 ──
+  initLazy('c-roa-trend',{
+    xAxis:{type:'category',data:['2022','2023','2024','2025','2026YTD'],axisLine:{lineStyle:{color:'#2e3354'}},axisTick:{show:false},axisLabel:{color:'#94a3b8',fontSize:11}},
+    yAxis:{...BASE.yAxis,min:0,max:3,axisLabel:{formatter:function(v){return v+'%';}}},
+    series:[{
+      type:'line',smooth:false,data:[2.1,1.8,1.5,1.2,0.8],
+      lineStyle:{color:'#4f8ef7',width:2.5},
+      itemStyle:{color:'#4f8ef7'},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(79,142,247,.4)'},{offset:1,color:'rgba(79,142,247,.02)'}]}},
+      label:{show:true,position:'top',color:'#e2e8f0',fontSize:11,formatter:function(p){return p.value+'%';}},
+    },{
+      type:'line',data:[2.2,2.0,1.8,1.5,1.3],name:'预算',
+      lineStyle:{color:'#fbbf24',type:'dashed',width:1.5},itemStyle:{color:'#fbbf24'},symbol:'none',
+    }]
+  });
+
+  // ── 定价趋势 ──
+  initLazy('c-pricing',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,min:15,max:22,axisLabel:{formatter:function(v){return v+'%';}}},
+    series:[{
+      name:'综合定价',type:'line',smooth:true,data:trend(19.8,18.2,24,0.3),
+      lineStyle:{color:'#a78bfa',width:2},itemStyle:{color:'#a78bfa'},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(167,139,250,.35)'},{offset:1,color:'rgba(167,139,250,.02)'}]}},
+    }]
+  });
+
+// ── 信贷损失率 ──
+var closs = trend(5.2, 7.8, 24, 0.4);
+var budget_cl = trend(5.0, 6.7, 24, 0.2);
+
+// 获取容器并初始化
+var dom = document.getElementById('c-credit-loss');
+var myChart = echarts.init(dom);
+
+// 配置项（不带 title 和 graphic）
+var option = {
+  xAxis: {
+    type: 'category',
+    data: M24,
+    axisLine: { lineStyle: { color: '#2e3354' } },
+    axisTick: { show: false },
+    axisLabel: { color: '#94a3b8', fontSize: 10, rotate: 30 }
+  },
+  yAxis: {
+    type: 'value',
+    min: 4,
+    max: 10,
+    splitLine: { lineStyle: { color: '#1e2235' } },
+    axisLabel: {
+      color: '#94a3b8',
+      fontSize: 10,
+      formatter: function(v) { return v + '%'; }
+    }
+  },
+  series: [
+    {
+      name: '信贷损失率',
+      type: 'line',
+      smooth: true,
+      data: closs,
+      lineStyle: { color: '#f87171', width: 2 },
+      itemStyle: { color: '#f87171' },
+      markArea: {
+        silent: true,
+        data: [[{ yAxis: 8 }, { yAxis: 10 }]],
+        itemStyle: { color: 'rgba(248,113,113,.08)' }
+      }
+    },
+    {
+      name: '预算',
+      type: 'line',
+      data: budget_cl,
+      lineStyle: { color: '#fbbf24', type: 'dashed', width: 1.5 },
+      itemStyle: { color: '#fbbf24' },
+      symbol: 'none'
+    },
+    {
+      name: '管理红线8%',
+      type: 'line',
+      data: M24.map(function() { return 8; }),
+      lineStyle: { color: '#f87171', type: 'dashed', width: 1.5 },
+      itemStyle: { color: '#f87171' },
+      symbol: 'none'
+    }
+  ]
+};
+
+myChart.setOption(option);
+var chart = myChart;
+
+// 渲染完成后添加文字（精确在红线上方）
+setTimeout(function() {
+  var yPixel = myChart.convertToPixel({ yAxisIndex: 0 }, { y: 8.2 })[1];
+  myChart.setOption({
+    graphic: {
+      type: 'text',
+      left: 30,
+      top: '30%',
+      style: {
+        text: '管理红线：8%',
+        fill: '#f87171',
+        fontSize: 11,
+        fontWeight: 'bold',
+        backgroundColor: 'rgba(30,34,53,0.7)',
+        padding: [2, 6, 2, 6],
+        borderRadius: 4
+      },
+      z: 100
+    }
+  });
+}, 100);
+
+// 等待图表渲染完成，精确添加文字
+setTimeout(function() {
+  if (!chart || !chart.setOption) {
+    // 如果 initLazy 没有返回实例，尝试通过 DOM 获取
+    var dom = document.getElementById('c-credit-loss');
+    if (dom && dom.echarts) chart = echarts.getInstanceByDom(dom);
+  }
+  if (chart && chart.convertToPixel) {
+    var yPos = chart.convertToPixel({ yAxisIndex: 0 }, { y: 8.2 })[1]; // 8.2% 的位置（线上方一点）
+    chart.setOption({
+      graphic: {
+        type: 'text',
+        left: 30,
+        top: yPos - 18,   // 再向上偏移18像素
+        style: {
+          text: '管理红线：8%',
+          fill: '#f87171',
+          fontSize: 11,
+          fontWeight: 'bold',
+          backgroundColor: 'rgba(30,34,53,0.7)',
+          padding: [2, 6, 2, 6],
+          borderRadius: 4
+        },
+        z: 100
+      }
+    });
+  } else {
+    // 降级方案：使用 title 手动调参
+    console.warn('无法获取图表实例，请手动调整 title 的 top 值');
+  }
+}, 200);
+
+  // ── 清收金额 ──
+  initLazy('c-recovery-amt',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    series:[
+      {name:'年累计清收',type:'line',smooth:true,data:[0,2.1,4.5,7.2,10.1,13.4,16.8,20.5,24.2,28.1,32.3,36.8,2.2,4.6,7.1,10.0,13.2,16.5,20.0,23.8,27.8,31.9,36.2,41.0],
+       lineStyle:{color:'#34d399',width:2},itemStyle:{color:'#34d399'}},
+      {name:'预算',type:'line',data:[0,2.5,5.2,8.1,11.2,14.6,18.2,22.0,25.9,30.1,34.5,39.2,2.8,5.8,8.9,12.2,15.8,19.6,23.6,27.8,32.2,36.8,41.6,46.5],
+       lineStyle:{color:'#fbbf24',type:'dashed',width:1.5},itemStyle:{color:'#fbbf24'},symbol:'none'},
+    ]
+  });
+
+// ── 综合资金成本 ──
+var fc = trend(2.38, 2.05, 24, 0.06);
+initLazy('c-funding-total', {
+  // 添加第一个 title（资金成本标题，可保留原有）
+  title: {
+    text: '综合资金成本',
+    left: 10,
+    top: 10,
+    textStyle: { fontSize: 12, fontWeight: 'bold', color: '#fbbf24' }
+  },
+  grid: { ...BASE.grid, left: '1.5%', right: '2%', top: 42, bottom: 24 },
+  xAxis: { ...BASE.xAxis, data: M24 },
+  yAxis: { ...BASE.yAxis, min: 1.5, max: 2.6, axisLabel: { formatter: function(v) { return v + '%'; } } },
+  series: [
+    {
+      name: '综合资金成本',
+      type: 'line',
+      smooth: true,
+      data: fc,
+      lineStyle: { color: '#fbbf24', width: 2 },
+      itemStyle: { color: '#fbbf24' },
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(251,191,36,.35)' },
+            { offset: 1, color: 'rgba(251,191,36,.02)' }
+          ]
+        }
+      }
+    },
+    {
+      name: '26年底预算目标',
+      type: 'line',
+      data: M24.map(function() { return 1.85; }),
+      lineStyle: { color: '#fb923c', type: 'dashed', width: 1.5 },
+      itemStyle: { color: '#fb923c' },
+      symbol: 'none'
+    }
+  ],
+  // 添加第二个 title 显示预算目标文字（放在虚线上方靠左）
+  graphic: [
+    {
+      type: 'text',
+      left: 30,                    // 靠左留一点间距
+      top: '48%',                  // 手动调整：目标线在约68%，放62%就在其上方
+      style: {
+        text: '预算目标：1.85%',
+        fill: '#fb923c',
+        fontSize: 11,
+        fontWeight: 'bold',
+        backgroundColor: 'rgba(30,34,53,0.7)',
+        padding: [2, 6, 2, 6],
+        borderRadius: 4
+      },
+      z: 100
+    }
+  ]
+});
+
+  // ── 分渠道资金成本（四宫格：每图左轴成本折线 + 右轴来源占比柱）──
+  function fundingChannelDualAxis(opts) {
+    return {
+      backgroundColor: BASE.backgroundColor,
+      textStyle: BASE.textStyle,
+      tooltip: BASE.tooltip,
+      legend: { top: 2, textStyle: { color: '#94a3b8', fontSize: 10 }, data: ['成本率', '来源占比'] },
+      grid: { ...BASE.grid, top: 32, bottom: 22 },
+      xAxis: { ...BASE.xAxis, data: M24 },
+      yAxis: [
+        {
+          type: 'value',
+          min: opts.costMin,
+          max: opts.costMax,
+          axisLabel: { formatter: function(v) { return v + '%'; }, color: '#94a3b8', fontSize: 10 },
+          splitLine: { lineStyle: { color: '#1e2235' } }
+        },
+        {
+          type: 'value',
+          min: 0,
+          max: 100,
+          axisLabel: { formatter: function(v) { return v + '%'; }, color: '#94a3b8', fontSize: 10 },
+          splitLine: { show: false }
+        }
+      ],
+      series: [
+        {
+          name: '成本率',
+          type: 'line',
+          smooth: true,
+          data: opts.costData,
+          lineStyle: { color: opts.lineColor, width: 2 },
+          itemStyle: { color: opts.lineColor },
+          symbol: 'none',
+          yAxisIndex: 0
+        },
+        {
+          name: '来源占比',
+          type: 'bar',
+          data: opts.shareData,
+          barWidth: '38%',
+          itemStyle: { color: opts.barFill, borderColor: opts.barBorder },
+          yAxisIndex: 1
+        }
+      ]
+    };
+  }
+  var _fcBankCost = trend(2.1, 1.75, 24, 0.12);
+  var _fcTrustCost = trend(2.5, 2.1, 24, 0.15);
+  var _fcConsumerCost = trend(3.2, 2.75, 24, 0.18);
+  var _fcMicroloanCost = trend(3.5, 3.0, 24, 0.2);
+  initLazy('c-funding-bank', fundingChannelDualAxis({
+    costMin: 1.5, costMax: 2.35,
+    costData: _fcBankCost,
+    shareData: trend(48, 56, 24, 2),
+    lineColor: '#4f8ef7',
+    barFill: 'rgba(79,142,247,.28)',
+    barBorder: 'rgba(79,142,247,.55)'
+  }));
+  initLazy('c-funding-trust', fundingChannelDualAxis({
+    costMin: 2.0, costMax: 2.75,
+    costData: _fcTrustCost,
+    shareData: trend(24, 18, 24, 1.5),
+    lineColor: '#818cf8',
+    barFill: 'rgba(129,140,248,.28)',
+    barBorder: 'rgba(129,140,248,.55)'
+  }));
+  initLazy('c-funding-consumer', fundingChannelDualAxis({
+    costMin: 2.55, costMax: 3.45,
+    costData: _fcConsumerCost,
+    shareData: trend(18, 14, 24, 1.2),
+    lineColor: '#fb923c',
+    barFill: 'rgba(251,146,60,.28)',
+    barBorder: 'rgba(251,146,60,.55)'
+  }));
+  initLazy('c-funding-microloan', fundingChannelDualAxis({
+    costMin: 2.85, costMax: 3.75,
+    costData: _fcMicroloanCost,
+    shareData: trend(10, 12, 24, 1),
+    lineColor: '#f87171',
+    barFill: 'rgba(248,113,113,.28)',
+    barBorder: 'rgba(248,113,113,.55)'
+  }));
+
+// ── 销售/运营成本 ──
+var salesBudget = M24.map(function(){ return 1.8; });  // 改为 1.8%
+var opexBudget = M24.map(function(){ return 1.6; });   // 改为 1.6%
+
+// 销售成本图表（目标线 1.8%）
+initLazy('c-sales-cost', {
+  title: {
+    text: '预算目标：1.8%',     // 文字改为 1.8%
+    left: 30,
+    top: '50%',                // 可根据实际微调（数值越小越靠上）
+    textStyle: {
+      color: '#fbbf24',
+      fontSize: 11,
+      fontWeight: 'bold',
+      backgroundColor: 'rgba(30,34,53,0.7)',
+      padding: [2, 6, 2, 6],
+      borderRadius: 4
+    },
+    z: 100
+  },
+  xAxis: { ...BASE.xAxis, data: M24 },
+  yAxis: { ...BASE.yAxis, min: 1, max: 2.5, axisLabel: { formatter: function(v) { return v + '%'; } } },
+  series: [
+    {
+      name: '销售成本',
+      type: 'line',
+      smooth: true,
+      data: trend(2.1, 1.6, 24, 0.08),
+      lineStyle: { color: '#4f8ef7', width: 2 },
+      itemStyle: { color: '#4f8ef7' },
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(79,142,247,.3)' },
+            { offset: 1, color: 'rgba(79,142,247,.02)' }
+          ]
+        }
+      }
+    },
+    {
+      name: '预算目标',
+      type: 'line',
+      data: salesBudget,
+      lineStyle: { color: '#fbbf24', type: 'dashed', width: 1.5 },
+      itemStyle: { color: '#fbbf24' },
+      symbol: 'none'
+    }
+  ]
+});
+
+// 运营成本图表（目标线 1.6%）
+initLazy('c-opex-cost', {
+  title: {
+    text: '预算目标：1.6%',     // 文字改为 1.6%
+    left: 30,
+    top: '44%',                // 同样位置，如需微调可改此值
+    textStyle: {
+      color: '#fbbf24',
+      fontSize: 11,
+      fontWeight: 'bold',
+      backgroundColor: 'rgba(30,34,53,0.7)',
+      padding: [2, 6, 2, 6],
+      borderRadius: 4
+    },
+    z: 100
+  },
+  xAxis: { ...BASE.xAxis, data: M24 },
+  yAxis: { ...BASE.yAxis, min: 0.8, max: 2.0, axisLabel: { formatter: function(v) { return v + '%'; } } },
+  series: [
+    {
+      name: '运营成本',
+      type: 'line',
+      smooth: true,
+      data: trend(1.7, 1.3, 24, 0.06),
+      lineStyle: { color: '#fb923c', width: 2 },
+      itemStyle: { color: '#fb923c' },
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(251,146,60,.3)' },
+            { offset: 1, color: 'rgba(251,146,60,.02)' }
+          ]
+        }
+      }
+    },
+    {
+      name: '预算目标',
+      type: 'line',
+      data: opexBudget,
+      lineStyle: { color: '#fbbf24', type: 'dashed', width: 1.5 },
+      itemStyle: { color: '#fbbf24' },
+      symbol: 'none'
+    }
+  ]
+});
+
+  // ── 预警表图表 ──
+  // L3 ENR by 产品
+  initLazy('c-enr-prod',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    legend:{top:4,textStyle:{color:'#94a3b8',fontSize:10}},
+    tooltip:{trigger:'axis',formatter:function(params){
+      var s=params[0].axisValue+'<br/>';
+      var total=params.reduce(function(a,b){return a+b.value;},0);
+      params.forEach(function(p){s+=p.marker+p.seriesName+': '+p.value+'亿 ('+((p.value/total*100).toFixed(1))+'%)<br/>';});
+      return s;
+    }},
+    series:[
+      {name:'UPL',type:'line',smooth:true,stack:null,data:trend(600,610,24,20),lineStyle:{color:'#4f8ef7',width:2},itemStyle:{color:'#4f8ef7'},symbol:'none'},
+      {name:'易贷',type:'line',smooth:true,data:trend(400,280,24,15),lineStyle:{color:'#f87171',width:2},itemStyle:{color:'#f87171'},symbol:'none'},
+      {name:'房抵贷',type:'line',smooth:true,data:trend(160,155,24,8),lineStyle:{color:'#fbbf24',width:2},itemStyle:{color:'#fbbf24'},symbol:'none'},
+      {name:'车抵贷',type:'line',smooth:true,data:trend(90,85,24,5),lineStyle:{color:'#34d399',width:2},itemStyle:{color:'#34d399'},symbol:'none'},
+    ]
+  });
+
+  // L3 ENR vintage 留存曲线
+  var mobs=[1,2,3,4,5,6,7,8,9,10,11,12,18,24,30,36];
+  function vintageDecay(start,decay,len,noise){
+    var a=[start];
+    for(var i=1;i<len;i++){a.push(+(a[i-1]*(1-decay-Math.random()*noise)).toFixed(3));}
+    return a.map(function(v){return+(v*100).toFixed(1);});
+  }
+  initLazy('c-enr-vintage',{
+    xAxis:{type:'category',data:mobs.map(function(m){return'MOB'+m;}),axisLine:{lineStyle:{color:'#2e3354'}},axisTick:{show:false},axisLabel:{color:'#94a3b8',fontSize:10}},
+    yAxis:{...BASE.yAxis,min:0,max:100,axisLabel:{formatter:function(v){return v+'%';}}},
+    legend:{top:4,textStyle:{color:'#94a3b8',fontSize:10}},
+    series:[
+      {name:'24H1',type:'line',smooth:true,data:vintageDecay(1,0.07,mobs.length,0.005),lineStyle:{color:'#f87171',width:2},itemStyle:{color:'#f87171'},symbol:'none'},
+      {name:'24H2',type:'line',smooth:true,data:vintageDecay(1,0.09,mobs.length,0.005),lineStyle:{color:'#fb923c',width:2},itemStyle:{color:'#fb923c'},symbol:'none'},
+      {name:'25H1',type:'line',smooth:true,data:vintageDecay(1,0.08,mobs.length,0.005),lineStyle:{color:'#fbbf24',width:2},itemStyle:{color:'#fbbf24'},symbol:'none'},
+      {name:'25H2',type:'line',smooth:true,data:vintageDecay(1,0.075,mobs.length,0.005),lineStyle:{color:'#34d399',width:2},itemStyle:{color:'#34d399'},symbol:'none'},
+    ]
+  });
+
+  // L3 新增放款 by 产品
+  initLazy('c-dis-prod',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    legend:{top:4,textStyle:{color:'#94a3b8',fontSize:10}},
+    series:[
+      {name:'UPL',type:'line',smooth:true,data:trend(38,45,24,3),lineStyle:{color:'#4f8ef7',width:2},itemStyle:{color:'#4f8ef7'},symbol:'none'},
+      {name:'易贷',type:'line',smooth:true,data:trend(20,10,24,2),lineStyle:{color:'#f87171',width:2},itemStyle:{color:'#f87171'},symbol:'none'},
+      {name:'房抵贷',type:'line',smooth:true,data:trend(6,7,24,1),lineStyle:{color:'#fbbf24',width:2},itemStyle:{color:'#fbbf24'},symbol:'none'},
+      {name:'车抵贷',type:'line',smooth:true,data:trend(4,5,24,0.8),lineStyle:{color:'#34d399',width:2},itemStyle:{color:'#34d399'},symbol:'none'},
+    ]
+  });
+
+  // L3 新增放款 by 渠道
+  initLazy('c-dis-ch',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    legend:{top:4,textStyle:{color:'#94a3b8',fontSize:10}},
+    series:[
+      {name:'直销',type:'line',smooth:true,data:trend(40,48,24,3),lineStyle:{color:'#4f8ef7',width:2},itemStyle:{color:'#4f8ef7'},symbol:'none'},
+      {name:'综拓',type:'line',smooth:true,data:trend(10,16,24,1.5),lineStyle:{color:'#34d399',width:2},itemStyle:{color:'#34d399'},symbol:'none'},
+      {name:'银行拒量',type:'line',smooth:true,data:trend(8,9,24,1),lineStyle:{color:'#fbbf24',width:2},itemStyle:{color:'#fbbf24'},symbol:'none'},
+      {name:'消金联营',type:'line',smooth:true,data:trend(14,3,24,1),lineStyle:{color:'#f87171',width:2},itemStyle:{color:'#f87171'},symbol:'none'},
+    ]
+  });
+
+  // L3 直销产能
+  initLazy('c-sales-cap',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,min:4,max:15,axisLabel:{formatter:function(v){return v+'万';}}},
+    legend:{top:4,textStyle:{color:'#94a3b8',fontSize:10}},
+    series:[
+      {name:'整体',type:'line',smooth:true,data:trend(9.5,8.2,24,0.4),lineStyle:{color:'#e2e8f0',width:2.5},itemStyle:{color:'#e2e8f0'},symbol:'none'},
+      {name:'农夫型',type:'line',smooth:true,data:trend(13,11.2,24,0.5),lineStyle:{color:'#34d399',width:2},itemStyle:{color:'#34d399'},symbol:'none'},
+      {name:'猎人型',type:'line',smooth:true,data:trend(8,6.8,24,0.4),lineStyle:{color:'#f87171',width:2},itemStyle:{color:'#f87171'},symbol:'none'},
+    ]
+  });
+
+  // L3 绩效三图
+  initLazy('c-perf-bar',{
+    xAxis:{type:'category',data:['前20%','20%-70%','后30%'],axisLine:{lineStyle:{color:'#2e3354'}},axisTick:{show:false},axisLabel:{color:'#94a3b8',fontSize:11}},
+    yAxis:{...BASE.yAxis,axisLabel:{formatter:function(v){return v+'亿';}}},
+    series:[{type:'bar',data:[
+      {value:38,itemStyle:{color:'#34d399'},label:{show:true,position:'top',color:'#34d399',formatter:'{c}亿\n42%'}},
+      {value:42,itemStyle:{color:'#fbbf24'},label:{show:true,position:'top',color:'#fbbf24',formatter:'{c}亿\n47%'}},
+      {value:9,itemStyle:{color:'#f87171'},label:{show:true,position:'top',color:'#f87171',formatter:'{c}亿\n10%'}},
+    ]}]
+  });
+  var M3_26=['26/1月','26/2月','26/3月'];
+  initLazy('c-perf-line',{
+    xAxis:{type:'category',data:M3_26,axisLine:{lineStyle:{color:'#2e3354'}},axisTick:{show:false},axisLabel:{color:'#94a3b8',fontSize:11}},
+    yAxis:{...BASE.yAxis,min:3,max:18,axisLabel:{formatter:function(v){return v+'万';}}},
+    legend:{top:2,textStyle:{color:'#94a3b8',fontSize:10}},
+    series:[
+      {name:'前20%(在职)',type:'line',data:[15.2,15.8,16.1],lineStyle:{color:'#34d399',width:2},itemStyle:{color:'#34d399'}},
+      {name:'20%-70%',type:'line',data:[8.5,8.7,8.9],lineStyle:{color:'#fbbf24',width:2},itemStyle:{color:'#fbbf24'}},
+      {name:'后30%',type:'line',data:[4.2,4.1,4.3],lineStyle:{color:'#f87171',width:2},itemStyle:{color:'#f87171'}},
+      {name:'新员工',type:'line',data:[3.5,4.2,5.1],lineStyle:{color:'#818cf8',width:2,type:'dashed'},itemStyle:{color:'#818cf8'}},
+    ]
+  });
+  initLazy('c-perf-retain',{
+    xAxis:{type:'category',data:M3_26,axisLine:{lineStyle:{color:'#2e3354'}},axisTick:{show:false},axisLabel:{color:'#94a3b8',fontSize:11}},
+    yAxis:{...BASE.yAxis,min:40,max:100,axisLabel:{formatter:function(v){return v+'%';}}},
+    legend:{top:2,textStyle:{color:'#94a3b8',fontSize:10}},
+    series:[
+      {name:'前20%',type:'line',data:[92,91,90],lineStyle:{color:'#34d399',width:2},itemStyle:{color:'#34d399'}},
+      {name:'20%-70%',type:'line',data:[85,83,82],lineStyle:{color:'#fbbf24',width:2},itemStyle:{color:'#fbbf24'}},
+      {name:'后30%',type:'line',data:[68,66,65],lineStyle:{color:'#f87171',width:2},itemStyle:{color:'#f87171'}},
+      {name:'新员工',type:'line',data:[78,74,70],lineStyle:{color:'#818cf8',width:2,type:'dashed'},itemStyle:{color:'#818cf8'}},
+    ]
+  });
+
+  // L3 定价 by 产品
+  initLazy('c-price-prod',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,min:12,max:24,axisLabel:{formatter:function(v){return v+'%';}}},
+    legend:{top:4,textStyle:{color:'#94a3b8',fontSize:10}},
+    series:[
+      {name:'UPL',type:'line',smooth:true,data:trend(18.5,17.2,24,0.3),lineStyle:{color:'#4f8ef7',width:2},itemStyle:{color:'#4f8ef7'},symbol:'none'},
+      {name:'易贷',type:'line',smooth:true,data:trend(21.5,20.2,24,0.4),lineStyle:{color:'#f87171',width:2},itemStyle:{color:'#f87171'},symbol:'none'},
+      {name:'房抵贷',type:'line',smooth:true,data:trend(15.5,14.8,24,0.2),lineStyle:{color:'#fbbf24',width:2},itemStyle:{color:'#fbbf24'},symbol:'none'},
+      {name:'车抵贷',type:'line',smooth:true,data:trend(16.8,15.9,24,0.25),lineStyle:{color:'#34d399',width:2},itemStyle:{color:'#34d399'},symbol:'none'},
+    ]
+  });
+
+  // L3 C-M3
+  initLazy('c-cm3',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,min:1.5,max:4,axisLabel:{formatter:function(v){return v+'%';}}},
+    series:[
+      {name:'C-M3迁徙率',type:'line',smooth:true,data:trend(2.1,2.8,24,0.15),lineStyle:{color:'#f87171',width:2},itemStyle:{color:'#f87171'},
+       areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(248,113,113,.3)'},{offset:1,color:'rgba(248,113,113,.02)'}]}}},
+      {name:'预算',type:'line',data:trend(2.0,2.4,24,0.1),lineStyle:{color:'#fbbf24',type:'dashed',width:1.5},itemStyle:{color:'#fbbf24'},symbol:'none'},
+    ]
+  });
+
+  // L3 逾期率 by 产品
+  initLazy('c-dpd-prod',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,min:0,max:12,axisLabel:{formatter:function(v){return v+'%';}}},
+    legend:{top:4,textStyle:{color:'#94a3b8',fontSize:10}},
+    series:[
+      {name:'UPL',type:'line',smooth:true,data:trend(4.2,4.5,24,0.2),lineStyle:{color:'#4f8ef7',width:2},itemStyle:{color:'#4f8ef7'},symbol:'none'},
+      {name:'易贷',type:'line',smooth:true,data:trend(5.8,8.2,24,0.4),lineStyle:{color:'#f87171',width:2},itemStyle:{color:'#f87171'},symbol:'none'},
+      {name:'房抵贷',type:'line',smooth:true,data:trend(2.1,2.3,24,0.1),lineStyle:{color:'#fbbf24',width:2},itemStyle:{color:'#fbbf24'},symbol:'none'},
+      {name:'车抵贷',type:'line',smooth:true,data:trend(2.8,3.0,24,0.12),lineStyle:{color:'#34d399',width:2},itemStyle:{color:'#34d399'},symbol:'none'},
+    ]
+  });
+
+  // L3 拨备覆盖率
+  initLazy('c-llr',{
+    xAxis:{...BASE.xAxis,data:M24},
+    yAxis:{...BASE.yAxis,min:120,max:220,axisLabel:{formatter:function(v){return v+'%';}}},
+    series:[{
+      name:'拨备覆盖率',type:'line',smooth:true,data:[185,180,175,172,168,165,162,160,158,156,154,153,152,151,150,150,150,150,150,150,150,150,150,150],
+      lineStyle:{color:'#a78bfa',width:2},itemStyle:{color:'#a78bfa'},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(167,139,250,.35)'},{offset:1,color:'rgba(167,139,250,.02)'}]}},
+      markLine:{data:[{yAxis:150,name:'监管要求'}],lineStyle:{color:'#f87171',type:'dashed'},label:{color:'#f87171',fontSize:10}},
+    }]
+  });
+
+  // 热力图
+  buildVintageHeatmap();
+  buildRecovHeatmaps();
+  colorStaticHeatmaps();
+  buildLlrTable();
+
+
+  // Flush all lazy-registered charts
+  try{flushLazy();}catch(e){console.warn('[flushLazy error]',e);}
+
+  // Build heatmaps & tables
+  try{buildVintageHeatmap();}catch(e){console.warn('[buildVintageHeatmap error]',e);}
+  try{buildRecovHeatmaps();}catch(e){console.warn('[buildRecovHeatmaps error]',e);}
+  try{colorStaticHeatmaps();}catch(e){console.warn('[colorStaticHeatmaps error]',e);}
+  try{buildLlrTable();}catch(e){console.warn('[buildLlrTable error]',e);}
+
+}); // end DOMContentLoaded
+</script>
+</body>
+</html>

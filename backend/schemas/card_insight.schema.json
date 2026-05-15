@@ -1,0 +1,141 @@
+{
+  "type": "object",
+  "required": [
+    "card_id",
+    "status",
+    "title",
+    "standard_insight",
+    "drivers",
+    "watch_items",
+    "evidence",
+    "exploratory_insights",
+    "deep_dive_questions"
+  ],
+  "properties": {
+    "card_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["red", "yellow", "green"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 20
+    },
+    "standard_insight": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 220
+    },
+    "drivers": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 60
+      }
+    },
+    "watch_items": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 60
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["metric", "value", "note"],
+        "properties": {
+          "metric": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "exploratory_insights": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "insight",
+          "confidence",
+          "supporting_facts",
+          "validation_needed"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "contradiction",
+              "hidden_risk",
+              "quality_issue",
+              "offset_failure",
+              "structural_shift"
+            ]
+          },
+          "insight": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 220
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          },
+          "supporting_facts": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "validation_needed": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "deep_dive_questions": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      }
+    }
+  },
+  "additionalProperties": false
+}

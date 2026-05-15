@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>陆金所控股 · AI 经营洞察</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--surface3:#2a2e44;
+  --border:#2e3354;--accent:#4f8ef7;--accent2:#7c5cfc;
+  --green:#34d399;--red:#f87171;--yellow:#fbbf24;--orange:#fb923c;--purple:#a78bfa;
+  --text:#e2e8f0;--muted:#94a3b8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;}
+
+/* ── 顶栏 ── */
+.top-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.top-bar h1{font-size:16px;font-weight:700;color:var(--accent);}
+.top-bar p{font-size:11px;color:var(--muted);margin-top:2px;}
+.top-bar .back-btn{padding:5px 14px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);transition:.15s;}
+.top-bar .back-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* ── Tab 切换 ── */
+.tab-bar{display:flex;gap:8px;padding:12px 24px;background:var(--surface);border-bottom:1px solid var(--border);}
+.tab-btn{padding:7px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:.15s;}
+.tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent;}
+.tab-btn:hover:not(.active){background:var(--surface2);}
+
+/* ── 内容区 ── */
+.main{max-width:1200px;margin:0 auto;padding:20px 24px 60px;}
+.tab-pane{display:none;}.tab-pane.active{display:block;}
+
+/* ── Section ── */
+.section{margin-bottom:24px;}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.section-title{font-size:15px;font-weight:700;}
+
+/* ── 评分卡 ── */
+.ai-score-card{background:linear-gradient(135deg,rgba(79,142,247,.08),rgba(124,92,252,.08));border:1px solid rgba(79,142,247,.3);border-radius:14px;padding:16px;display:flex;align-items:center;gap:14px;}
+.ai-score-circle{width:72px;height:72px;border-radius:50%;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
+.ai-score-circle svg{position:absolute;top:0;left:0;}
+.ai-score-num{font-size:22px;font-weight:700;line-height:1;z-index:1;}
+.ai-score-label{font-size:9px;color:var(--muted);z-index:1;}
+.ai-score-info h3{font-size:13px;font-weight:700;margin-bottom:4px;}
+.ai-score-info p{font-size:11px;color:var(--muted);line-height:1.65;}
+.ai-verdict{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;margin-top:6px;}
+.ai-verdict.warn{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);color:var(--yellow);}
+.ai-verdict.good{background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:var(--green);}
+.ai-verdict.poor{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.3);color:var(--red);}
+.ai-interpret-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:900px){.ai-interpret-wrap{grid-template-columns:1fr;}}
+
+/* ── 维度卡片 ── */
+.ai-dims-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media(max-width:768px){.ai-dims-grid{grid-template-columns:1fr 1fr;}}
+.ai-dim-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;cursor:pointer;transition:.15s;}
+.ai-dim-card:hover{background:var(--surface3);border-color:var(--accent);transform:translateY(-1px);}
+.ai-dim-card.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(79,142,247,.2);}
+.ai-dim-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.ai-dim-name{font-size:12.5px;font-weight:700;}
+.ai-dim-score-badge{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:700;}
+.ai-dim-bar-wrap{height:4px;background:var(--surface);border-radius:2px;overflow:hidden;margin-bottom:6px;}
+.ai-dim-bar{height:100%;border-radius:2px;transition:width .5s ease;}
+.ai-dim-text{font-size:10.5px;color:var(--muted);line-height:1.5;}
+
+/* ── 深度分析框 ── */
+.ai-detail-box{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:12px;}
+.ai-detail-title{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.ai-detail-content{font-size:12px;line-height:1.75;}
+.ai-detail-bullets{display:flex;flex-direction:column;gap:8px;margin-top:6px;}
+.ai-detail-bullet{display:flex;gap:8px;align-items:flex-start;}
+.bul-icon{flex-shrink:0;font-size:13px;margin-top:2px;}
+.bul-text{font-size:11.5px;color:var(--text);line-height:1.7;}
+
+/* ── 根因链 ── */
+.cause-chain{display:flex;flex-wrap:wrap;align-items:center;gap:0;row-gap:8px;font-size:11.5px;}
+.cause-tag{padding:5px 10px;border-radius:7px;font-weight:700;}
+.cause-arrow{padding:0 6px;color:var(--muted);}
+.cause-sep{padding:0 8px;color:var(--border);font-size:13px;}
+
+/* ══════════════════════════════════════════════════════════ */
+/* ── 预测模块 ── */
+/* ══════════════════════════════════════════════════════════ */
+.ai-formula-bar{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:16px;font-size:12px;color:var(--muted);line-height:1.7;}
+.ai-scenario-btns{display:flex;gap:10px;margin-bottom:14px;}
+.ai-sc-btn{flex:1;padding:10px 12px;border-radius:10px;border:2px solid transparent;background:rgba(248,113,113,.28);cursor:pointer;text-align:center;transition:.2s;font-family:inherit;color:#fff;}
+.ai-sc-btn:hover{filter:brightness(1.08);}
+.ai-sc-btn h4{font-size:13px;font-weight:700;margin-bottom:2px;color:#fff;}
+.ai-sc-btn p{font-size:10px;color:rgba(255,255,255,.75);font-weight:400;}
+/* 未选中：悲观红底 */
+.ai-sc-btn.bear{background:rgba(248,113,113,.28);border-color:rgba(248,113,113,.35);}
+/* 未选中：基准黄底 */
+.ai-sc-btn.base{background:rgba(250,204,21,.28);border-color:rgba(250,204,21,.35);}
+/* 未选中：乐观绿底 */
+.ai-sc-btn.bull{background:rgba(52,211,153,.28);border-color:rgba(52,211,153,.35);}
+/* 选中：加深饱和度 + 实边框 */
+.ai-sc-btn.bear.active{background:rgba(248,113,113,.5);border-color:#f87171;box-shadow:0 0 12px rgba(248,113,113,.3);}
+.ai-sc-btn.base.active{background:rgba(250,204,21,.5);border-color:#facc15;box-shadow:0 0 12px rgba(250,204,21,.3);}
+.ai-sc-btn.bull.active{background:rgba(52,211,153,.5);border-color:#34d399;box-shadow:0 0 12px rgba(52,211,153,.3);}
+.ai-pred-layout{display:grid;grid-template-columns:340px 1fr;gap:16px;}
+@media(max-width:900px){.ai-pred-layout{grid-template-columns:1fr;}}
+.ai-param-panel{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.ai-param-panel h4{font-size:13px;font-weight:700;margin-bottom:12px;}
+.ai-param-group{margin-bottom:14px;}
+.ai-param-group-label{font-size:10.5px;color:var(--accent);font-weight:700;margin-bottom:6px;letter-spacing:.3px;}
+.ai-param-row{margin-bottom:10px;}
+.ai-param-name{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:3px;}
+.ai-param-val{font-weight:700;color:var(--text);font-size:11.5px;}
+.ai-slider{width:100%;height:4px;-webkit-appearance:none;appearance:none;background:var(--border);border-radius:2px;outline:none;cursor:pointer;}
+.ai-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;}
+.ai-slider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;}
+.ai-result-panel{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.ai-result-panel h4{font-size:13px;font-weight:700;margin-bottom:12px;}
+.ai-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+@media(max-width:600px){.ai-kpi-row{grid-template-columns:1fr;}}
+.ai-kpi-card{background:var(--surface3);border-radius:10px;padding:11px 13px;border:1px solid var(--border);}
+.ai-kpi-label{font-size:10px;color:var(--muted);margin-bottom:4px;}
+.ai-kpi-val{font-size:20px;font-weight:700;line-height:1;}
+.ai-kpi-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+.ai-sensitivity-table{overflow-x:auto;}
+.ai-sensitivity-table table{width:100%;border-collapse:collapse;font-size:11px;}
+.ai-sensitivity-table th{padding:5px 8px;background:var(--surface3);color:var(--muted);border:1px solid var(--border);font-weight:600;text-align:center;}
+.ai-sensitivity-table td{padding:4px 8px;border:1px solid var(--border);text-align:center;font-weight:600;}
+.ai-narrative-box{background:linear-gradient(135deg,rgba(79,142,247,.06),rgba(124,92,252,.06));border:1px solid rgba(79,142,247,.25);border-radius:10px;padding:13px;margin-top:12px;}
+.ai-narrative-box p{font-size:12px;line-height:1.85;color:var(--text);}
+.ai-generate-btn{padding:5px 10px;border-radius:7px;border:1px solid rgba(79,142,247,.45);background:rgba(79,142,247,.12);color:var(--accent);font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;}
+.ai-generate-btn:hover{background:rgba(79,142,247,.22);color:#fff;}
+.ai-generate-btn:disabled{opacity:.55;cursor:not-allowed;}
+
+/* ── 行业参考 ── */
+.bench-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;font-size:11px;}
+@media(max-width:768px){.bench-grid{grid-template-columns:repeat(2,1fr);}}
+.bench-card{background:var(--surface3);border-radius:8px;padding:9px 11px;border:1px solid var(--border);}
+.bench-card .label{color:var(--muted);margin-bottom:3px;font-size:10px;}
+.bench-card .val{font-size:16px;font-weight:700;}
+.bench-card .sub{color:var(--muted);font-size:10px;margin-top:2px;}
+
+/* ── role 标签 ── */
+.ai-dim-role{display:inline-block;font-size:9px;padding:2px 6px;border-radius:6px;font-weight:700;margin-left:6px;}
+.ai-dim-role.negative{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.3);}
+.ai-dim-role.neutral{background:rgba(251,191,36,.15);color:var(--yellow);border:1px solid rgba(251,191,36,.3);}
+.ai-dim-role.positive{background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.3);}
+
+/* ── emerging findings ── */
+.emerging-box{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px;}
+.emerging-item{margin-bottom:12px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;}
+.emerging-item:last-child{margin-bottom:0;}
+.emerging-type{display:inline-block;font-size:9px;padding:2px 7px;border-radius:6px;font-weight:700;margin-bottom:6px;}
+.emerging-type.contradiction{background:rgba(167,139,250,.15);color:var(--purple);border:1px solid rgba(167,139,250,.3);}
+.emerging-type.hidden_risk{background:rgba(248,113,113,.15);color:var(--red);border:1px solid rgba(248,113,113,.3);}
+.emerging-type.quality_issue{background:rgba(251,191,36,.15);color:var(--yellow);border:1px solid rgba(251,191,36,.3);}
+.emerging-type.offset_failure{background:rgba(251,146,60,.15);color:var(--orange);border:1px solid rgba(251,146,60,.3);}
+.emerging-type.structural_shift{background:rgba(79,142,247,.15);color:var(--accent);border:1px solid rgba(79,142,247,.3);}
+.emerging-type.second_order_effect{background:rgba(124,92,252,.15);color:var(--accent2);border:1px solid rgba(124,92,252,.3);}
+.emerging-finding{font-size:12px;font-weight:700;margin-bottom:6px;}
+.emerging-meta{font-size:10.5px;color:var(--muted);line-height:1.75;}
+.emerging-meta strong{color:var(--text);}
+
+/* ── summary items ── */
+.summary-item{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;}
+.summary-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.summary-label{font-size:11px;font-weight:700;margin-right:4px;}
+.summary-text{font-size:11.5px;color:var(--text);line-height:1.7;}
+
+/* ── next validation ── */
+.next-val-box{margin-top:10px;padding:10px 12px;background:rgba(79,142,247,.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;}
+.next-val-title{font-size:10.5px;color:var(--accent);font-weight:700;margin-bottom:5px;}
+.next-val-item{font-size:11px;color:var(--muted);padding:2px 0;}
+
+/* ── offset evidence ── */
+.offset-evidence{margin-top:6px;padding:6px 10px;background:var(--surface);border-radius:6px;}
+.offset-evidence-item{font-size:10.5px;color:var(--muted);padding:2px 0;}
+</style>
+</head>
+<body>
+
+<!-- ── 顶栏 ── -->
+<div class="top-bar">
+  <div>
+    <h1>🤖 陆金所控股 · AI 经营洞察</h1>
+    <p>基于杜邦拆解框架 · 动态解读 + 经营计算器</p>
+  </div>
+  <button type="button" class="back-btn" onclick="location.href='lufax_dashboard3.html'">← 返回看板</button>
+</div>
+
+<!-- ── Tab 切换 ── -->
+<div class="tab-bar">
+  <button type="button" class="tab-btn active" data-tab="interpret" onclick="switchTab('interpret',this)">📊 动态解读</button>
+  <button type="button" class="tab-btn" data-tab="predict" onclick="switchTab('predict',this)">🔮 经营计算器</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- Tab 1: 动态解读 -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="main">
+<div class="tab-pane active" id="pane-interpret">
+<div class="section">
+
+  <!-- 综合评分 + 简报 -->
+  <div class="ai-interpret-wrap" style="margin-bottom:14px;">
+    <div class="ai-score-card">
+      <div class="ai-score-circle" id="ai-score-circle-wrap">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="30" fill="none" stroke="#2e3354" stroke-width="5"/>
+          <circle cx="36" cy="36" r="30" fill="none" stroke="url(#scoreGrad)" stroke-width="5"
+            stroke-dasharray="188.5" id="ai-score-arc"
+            stroke-dashoffset="75" stroke-linecap="round"
+            transform="rotate(-90 36 36)"/>
+          <defs>
+            <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#f87171"/>
+              <stop offset="50%" style="stop-color:#fbbf24"/>
+              <stop offset="100%" style="stop-color:#34d399"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="ai-score-num" id="ai-score-num" style="color:#fbbf24;">60</span>
+        <span class="ai-score-label">综合评分</span>
+      </div>
+      <div class="ai-score-info">
+        <h3>经营健康度：<span id="ai-health-label" style="color:var(--yellow);">中性观察</span></h3>
+        <p id="ai-health-summary">当前陆控经营处于转型压力期：风险成本是核心拖累，规模边际企稳，成本优化方向良好，消金赛道高成长可期。</p>
+        <div class="ai-verdict warn" id="ai-verdict-tag">⚠️ 需重点关注风险暴露节奏</div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:14px;">
+      <div style="font-size:10.5px;color:var(--muted);font-weight:700;letter-spacing:.4px;margin-bottom:10px;">📡 AI 实时解读摘要</div>
+      <div style="font-size:12px;line-height:1.9;color:var(--text);" id="ai-summary-text">
+        <div style="color:var(--muted);">等待 AI 接口返回实时解读摘要...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 六维诊断卡片 -->
+  <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:600;">▸ 点击维度卡片查看 AI 深度解读</div>
+  <div class="ai-dims-grid" id="ai-dims-grid"></div>
+
+  <!-- 深度解读详情框 -->
+  <div class="ai-detail-box" id="ai-detail-box">
+    <div class="ai-detail-title">
+      <span id="ai-detail-icon">📊</span>
+      <span id="ai-detail-dim-name">选择上方维度查看 AI 深度分析</span>
+      <span id="ai-detail-role"></span>
+    </div>
+    <div class="ai-detail-content" id="ai-detail-content">
+      <div style="color:var(--muted);font-size:12px;">点击上方任一维度卡片，AI 将为您呈现该维度的深度量化分析、归因拆解、同业对比与前瞻判断。</div>
+    </div>
+    <div id="ai-detail-next-validation"></div>
+  </div>
+
+  <!-- AI 根因链 -->
+  <div style="margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;">
+    <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.4px;margin-bottom:10px;">🔗 AI 根因链（净利润压力追溯）</div>
+    <div class="cause-chain" id="ai-cause-chain">
+      <div class="cause-tag" style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.4);color:var(--red);">净利润下滑</div>
+      <div class="cause-arrow">←</div>
+      <div class="cause-tag" style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);color:var(--red);">信贷损失率上行 +2.6pct</div>
+      <div class="cause-arrow">←</div>
+      <div class="cause-tag" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:var(--yellow);">易贷24Q1早逾恶化</div>
+      <div class="cause-arrow">←</div>
+      <div class="cause-tag" style="background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.3);color:var(--muted);">2024年大规模放款 + 客群质量下移</div>
+      <div class="cause-sep">|</div>
+      <div class="cause-tag" style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:var(--yellow);">规模压降 -8% ENR</div>
+      <div class="cause-arrow">←</div>
+      <div class="cause-tag" style="background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.3);color:var(--muted);">主动收缩易贷 + 直销产能不足</div>
+    </div>
+  </div>
+
+  <!-- AI 关键抵消因子 -->
+  <div style="margin-top:14px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;">
+    <div style="font-size:11px;color:var(--green);font-weight:700;letter-spacing:.4px;margin-bottom:10px;">✅ AI 关键抵消因子</div>
+    <div id="ai-offset-factors" style="font-size:11.5px;color:var(--muted);">等待 AI 接口返回抵消因子...</div>
+  </div>
+
+  <!-- AI 探索性发现 -->
+  <div class="emerging-box" id="ai-emerging-box" style="display:none;">
+    <div style="font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.4px;margin-bottom:10px;">🔍 AI 探索性发现</div>
+    <div id="ai-emerging-findings"></div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- Tab 2: 经营计算器（利润模拟器） -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div class="tab-pane" id="pane-predict">
+<div class="section">
+
+  <div class="ai-formula-bar">
+    🔮 基于杜邦分解框架：<strong style="color:var(--text);">陆控净利润 = ANR × ROA = ANR ×（定价率 − 信贷损失率 − 资金成本 − 销售成本 − 运营成本 − 税及其他）</strong><br>
+    拖动下方参数滑块，实时预测全年净利润（管理口径）。研究数据参考：2025年ANR约~1,900亿，净亏损17亿，消金规模+25.3%。
+  </div>
+
+  <!-- 情景按钮 -->
+  <div style="margin-bottom:14px;">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:7px;font-weight:600;">▸ 快速情景切换</div>
+    <div class="ai-scenario-btns">
+      <button class="ai-sc-btn bear" onclick="loadScenario('bear')">🐻 悲观情景<br><span style="font-size:9.5px;font-weight:400;">损失率持续高企</span></button>
+      <button class="ai-sc-btn base active" onclick="loadScenario('base')">📊 基准情景<br><span style="font-size:9.5px;font-weight:400;">2025年报趋势延续</span></button>
+      <button class="ai-sc-btn bull" onclick="loadScenario('bull')">🐂 乐观情景<br><span style="font-size:9.5px;font-weight:400;">消金高增+风险改善</span></button>
+    </div>
+  </div>
+
+  <div class="ai-pred-layout">
+    <!-- 参数调节面板 -->
+    <div class="ai-param-panel">
+      <h4>⚙️ 关键参数调节</h4>
+      <div class="ai-param-group"><div class="ai-param-group-label">📦 规模驱动</div>
+        <div class="ai-param-row"><div class="ai-param-name"><span>平均贷款余额 ANR（亿元）</span><span class="ai-param-val" id="pv-anr">1900</span></div><input type="range" class="ai-slider" id="sl-anr" min="1200" max="3000" step="50" value="1900" oninput="updatePredict()"></div>
+        <div class="ai-param-row"><div class="ai-param-name"><span>消金贷款增速（%，YoY）</span><span class="ai-param-val" id="pv-cg">25</span></div><input type="range" class="ai-slider" id="sl-cg" min="-20" max="60" step="1" value="25" oninput="updatePredict()"></div>
+      </div>
+      <div class="ai-param-group"><div class="ai-param-group-label">💰 收益端</div>
+        <div class="ai-param-row"><div class="ai-param-name"><span>综合定价率（%，年化）</span><span class="ai-param-val" id="pv-price">18.2</span></div><input type="range" class="ai-slider" id="sl-price" min="14" max="24" step="0.1" value="18.2" oninput="updatePredict()"></div>
+      </div>
+      <div class="ai-param-group"><div class="ai-param-group-label">⚠️ 风险成本</div>
+        <div class="ai-param-row"><div class="ai-param-name"><span>信贷损失率（%，年化 ANR）</span><span class="ai-param-val" id="pv-closs">7.8</span></div><input type="range" class="ai-slider" id="sl-closs" min="3" max="12" step="0.1" value="7.8" oninput="updatePredict()"></div>
+        <div class="ai-param-row"><div class="ai-param-name"><span>不良贷款率 NPL（%）</span><span class="ai-param-val" id="pv-npl">1.2</span></div><input type="range" class="ai-slider" id="sl-npl" min="0.5" max="5" step="0.1" value="1.2" oninput="updatePredict()"></div>
+      </div>
+      <div class="ai-param-group"><div class="ai-param-group-label">🏦 资金成本</div>
+        <div class="ai-param-row"><div class="ai-param-name"><span>综合资金成本（%，年化）</span><span class="ai-param-val" id="pv-fund">2.05</span></div><input type="range" class="ai-slider" id="sl-fund" min="1.2" max="4" step="0.05" value="2.05" oninput="updatePredict()"></div>
+      </div>
+      <div class="ai-param-group"><div class="ai-param-group-label">📊 业务成本</div>
+        <div class="ai-param-row"><div class="ai-param-name"><span>销售成本（%，年化 ANR）</span><span class="ai-param-val" id="pv-scost">1.6</span></div><input type="range" class="ai-slider" id="sl-scost" min="0.5" max="4" step="0.1" value="1.6" oninput="updatePredict()"></div>
+        <div class="ai-param-row"><div class="ai-param-name"><span>运营成本（%，年化 ANR）</span><span class="ai-param-val" id="pv-ocost">1.3</span></div><input type="range" class="ai-slider" id="sl-ocost" min="0.5" max="3" step="0.1" value="1.3" oninput="updatePredict()"></div>
+        <div class="ai-param-row"><div class="ai-param-name"><span>税及其他（%，年化 ANR）</span><span class="ai-param-val" id="pv-tax">1.2</span></div><input type="range" class="ai-slider" id="sl-tax" min="0.5" max="3" step="0.1" value="1.2" oninput="updatePredict()"></div>
+      </div>
+    </div>
+
+    <!-- 结果面板 -->
+    <div class="ai-result-panel">
+      <h4>📈 预测结果</h4>
+      <div class="ai-kpi-row">
+        <div class="ai-kpi-card"><div class="ai-kpi-label">预测 ROA（年化）</div><div class="ai-kpi-val" id="pred-roa" style="color:var(--yellow);">—</div><div class="ai-kpi-sub">管理红线 &gt;0%</div></div>
+        <div class="ai-kpi-card"><div class="ai-kpi-label">预测净利润（亿元，全年）</div><div class="ai-kpi-val" id="pred-profit" style="color:var(--accent);">—</div><div class="ai-kpi-sub" id="pred-profit-vs">vs. 2025实际 -17亿</div></div>
+        <div class="ai-kpi-card"><div class="ai-kpi-label">净利润 / 营收</div><div class="ai-kpi-val" id="pred-margin" style="color:var(--purple);">—</div><div class="ai-kpi-sub">参考营收 ≈ ANR×定价率</div></div>
+      </div>
+
+      <!-- 桑基图 -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;">🌊 杜邦拆解 · 利润流向桑基图（亿元）</div>
+      </div>
+      <div id="ai-sankey-chart" style="width:100%;height:380px;"></div>
+
+      <!-- ROA 敏感性矩阵 -->
+      <div style="margin-top:10px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:7px;">📉 ROA 敏感性矩阵（信贷损失率 × 定价率）</div>
+        <div class="ai-sensitivity-table" id="ai-sens-table"></div>
+      </div>
+
+      <!-- AI 叙述性分析 -->
+      <div class="ai-narrative-box">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;">
+          <div style="font-size:10.5px;color:var(--accent);font-weight:700;">AI 预测解读</div>
+          <button type="button" class="ai-generate-btn" id="ai-generate-scenario-btn" onclick="generateScenarioInsight()">生成AI情景解读</button>
+        </div>
+        <p id="ai-narrative-text">加载中…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 行业对比参考线 -->
+  <div style="margin-top:16px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;">
+    <div style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.4px;margin-bottom:10px;">📊 行业对比参考 / 历史锚点</div>
+    <div class="bench-grid">
+      <div class="bench-card"><div class="label">陆控2025实际ROA</div><div class="val" style="color:var(--red);">≈ -0.9%</div><div class="sub">净亏损17亿 / ANR约1,900亿</div></div>
+      <div class="bench-card"><div class="label">头部消金公司ROA均值</div><div class="val" style="color:var(--green);">1.5%~2.5%</div><div class="sub">招银消金/平安消金/马上消金</div></div>
+      <div class="bench-card"><div class="label">消金行业平均不良率</div><div class="val" style="color:var(--yellow);">2.5%~4%</div><div class="sub">陆控消金1.2%，优于行业均值</div></div>
+      <div class="bench-card"><div class="label">陆控消金规模增速</div><div class="val" style="color:var(--green);">+25.3%</div><div class="sub">2025年消金新增1,197亿</div></div>
+    </div>
+    <div style="margin-top:10px;padding:9px 12px;background:rgba(79,142,247,.06);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;font-size:11.5px;color:var(--muted);line-height:1.75;">
+      <strong style="color:var(--accent);">行研洞察：</strong>参考BCG《消费金融制胜策略》报告，消费金融ROA天花板约2.5-3%，核心驱动在于信贷损失率能否控制在贷款定价利差的40%以内。陆控目前信贷损失率约为定价率的43%，处于边际亏损区，若损失率能压降至7%以下，全年利润有望转正。
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// Tab 切换
+// ══════════════════════════════════════════════════════════
+function switchTab(tab, btnEl){
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
+  if(btnEl){ btnEl.classList.add('active'); }
+  else {
+    var sel=document.querySelector('.tab-btn[data-tab="'+tab+'"]');
+    if(sel) sel.classList.add('active');
+  }
+  var pane = document.getElementById('pane-'+tab);
+  if(pane) pane.classList.add('active');
+  if(tab==='predict'){
+    setTimeout(function(){
+      updatePredict();
+      // 延迟 resize 确保桑基图高清渲染
+      setTimeout(function(){
+        if(AI_SANKEY_CHART){ try{AI_SANKEY_CHART.resize();}catch(e){} }
+      }, 150);
+    }, 120);
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 动态解读 — 六维数据
+// ══════════════════════════════════════════════════════════
+const CURRENT_PERIOD = '2026-03-YTD';
+let AI_DIMS = [];
+let AI_OVERVIEW_SCORE = null;
+let LAST_PREDICT_RESULT = null;
+let CURRENT_SCENARIO = 'base';
+let SCENARIO_CACHE_TIMER = null;
+let LAST_SCENARIO_SIGNATURE = '';
+let LAST_RENDERED_AI_SIGNATURE = '';
+const AI_DASHBOARD_CACHE_PREFIX = 'lufax_ai_dashboard_cache_v1:';
+
+const DEFAULT_AI_DIMS = [
+  {id:'profit', icon:'💹', name:'利润健康度', score:55, role:'结果承压', brief:'净利润处于亏损区间，ROA为负，主要由信贷损失率上行拖累。', detail:{title:'利润健康度深度分析', content:'当前净利润承压，信贷成本上升是核心拖累因素，需关注风险暴露节奏。', bullets:[{icon:'🔴',text:'<strong>ROA承压：</strong>当前ROA为负，净利润亏损主要来自风险成本上升。'},{icon:'🟡',text:'<strong>定价能力：</strong>综合定价率维持在合理区间，但未能完全覆盖风险成本。'},{icon:'🔵',text:'<strong>修复条件：</strong>若信贷损失率回落，利润有望逐步转正。'}], next_validation:['信贷损失率走势','净利润环比变化']}},
+  {id:'scale', icon:'📦', name:'规模动能', score:60, role:'结构观察', brief:'贷款余额边际企稳，消金规模高增形成结构性替代。', detail:{title:'贷款规模动能分析', content:'整体规模压降趋缓，消费金融增长强劲，结构转型持续推进。', bullets:[{icon:'🟡',text:'<strong>总量企稳：</strong>ANR规模同比有所压降，但环比趋势趋于稳定。'},{icon:'🟢',text:'<strong>消金高增：</strong>消费金融规模增速保持双位数增长，成为新增长极。'},{icon:'🔵',text:'<strong>结构调整：</strong>高风险产品持续压降，低风险产品占比提升。'}], next_validation:['消金增速持续性','ANR环比变化']}},
+  {id:'risk', icon:'⚠️', name:'风险信号', score:45, role:'核心拖累', brief:'信贷损失率上行是最大风险信号，存量风险仍在释放。', detail:{title:'风险成本深度诊断', content:'信贷损失率高于去年同期，逾期指标有所上升，风险成本是利润最大拖累。', bullets:[{icon:'🔴',text:'<strong>损失率上行：</strong>信贷损失率同比上升，风险暴露仍在持续。'},{icon:'🟡',text:'<strong>逾期波动：</strong>部分产品早期逾期指标有所恶化，需密切关注。'},{icon:'🔵',text:'<strong>拨备充足：</strong>当前拨备覆盖率仍在安全区间，具备风险缓冲能力。'}], next_validation:['Vintage走势','迁徙率变化']}},
+  {id:'cost', icon:'💸', name:'成本效率', score:65, role:'边际改善', brief:'资金成本和运营成本优化形成正向贡献，部分抵消风险压力。', detail:{title:'成本效率综合评估', content:'综合资金成本稳中有降，运营效率提升，成本端呈现改善趋势。', bullets:[{icon:'🟢',text:'<strong>资金成本：</strong>综合资金成本处于行业较低水平，负债结构持续优化。'},{icon:'🟢',text:'<strong>运营效率：</strong>运营成本率同比下降，人效指标有所改善。'},{icon:'🟡',text:'<strong>销售成本：</strong>获客成本保持平稳，直销产能仍有提升空间。'}], next_validation:['资金成本走势','运营费用率变化']}},
+  {id:'transform', icon:'🔄', name:'转型进展', score:58, role:'结构观察', brief:'产品结构和渠道结构持续优化，转型推进中但短期仍有代价。', detail:{title:'战略转型进展评估', content:'消金转型稳步推进，产品结构向低风险迁移，但规模切换需要时间。', bullets:[{icon:'🟡',text:'<strong>结构切换：</strong>消金业务占比持续提升，传统业务有序压降。'},{icon:'🟢',text:'<strong>渠道优化：</strong>线上直销渠道产能提升，成本结构改善。'},{icon:'🔵',text:'<strong>客群调整：</strong>客群质量上移趋势显现，但存量调整仍需时间。'}], next_validation:['消金占比变化','渠道产能指标']}},
+  {id:'outlook', icon:'🔭', name:'综合前瞻', score:50, role:'待验证', brief:'经营处于观察期，关键变量方向待验证，需持续跟踪核心指标。', detail:{title:'综合前瞻与管理层研判', content:'当前数据不足以做出明确判断，经营处于中性观察状态，需持续跟踪核心指标走势。', bullets:[{icon:'🟡',text:'<strong>数据不足：</strong>当前维度数据有限，无法给出确定性判断。'},{icon:'🔵',text:'<strong>建议观察：</strong>持续跟踪关键经营指标，等待更多数据支撑。'}], next_validation:['经营趋势','核心指标变化','风险成本走势']}}
+];
+
+const DEFAULT_CAUSE_CHAIN = [
+  {label:'净利润下滑', tone:'negative'},
+  {label:'信贷损失率上行', tone:'negative'},
+  {label:'风险暴露持续', tone:'warning'},
+  {label:'存量资产质量承压', tone:'negative'}
+];
+
+const DEFAULT_OFFSET_FACTORS = [
+  {factor:'消金规模高增长', text:'消费金融规模保持双位数增长，部分对冲传统业务规模压降的影响。', evidence:['消金规模同比+25.3%','新增放款1,197亿']},
+  {factor:'综合资金成本优势', text:'负债端成本处于行业较低水平，息差空间优于同业。', evidence:['综合资金成本2.05%','低于行业平均']},
+  {factor:'成本优化持续推进', text:'运营成本率同比下降，人效改善形成利润支撑。', evidence:['运营成本率1.3%','同比下降']}
+];
+
+function escapeHtml(value){
+  return String(value == null ? '' : value)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function firstValue(obj, keys, fallback){
+  if(!obj) return fallback;
+  for(var i=0;i<keys.length;i++){
+    if(obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== '') return obj[keys[i]];
+  }
+  return fallback;
+}
+
+function toArray(value){
+  if(value == null || value === '') return [];
+  if(Array.isArray(value)) return value;
+  if(typeof value === 'string') return [value];
+  if(Array.isArray(value.items)) return value.items;
+  if(Array.isArray(value.list)) return value.list;
+  return [value];
+}
+
+function clampScore(value){
+  var n = Number(value);
+  if(!isFinite(n)) n = 0;
+  return Math.max(0, Math.min(100, Math.round(n)));
+}
+
+function scoreMeta(score){
+  if(score >= 70) return {color:'#34d399', colorBg:'rgba(52,211,153,.1)', colorBorder:'rgba(52,211,153,.3)', verdictClass:'good'};
+  if(score >= 50) return {color:'#fbbf24', colorBg:'rgba(251,191,36,.12)', colorBorder:'rgba(251,191,36,.3)', verdictClass:'warn'};
+  return {color:'#f87171', colorBg:'rgba(248,113,113,.12)', colorBorder:'rgba(248,113,113,.3)', verdictClass:'poor'};
+}
+
+function normalizeDimId(raw, index){
+  var id = String(raw || '').trim().replace(/[^A-Za-z0-9_-]/g, '_');
+  if(!id || /^_+$/.test(id)) id = 'dim_' + index;
+  return id;
+}
+
+function normalizeBullet(item, fallbackIcon){
+  if(typeof item === 'string') return {icon:fallbackIcon || '-', text:item};
+  return {
+    icon:firstValue(item, ['icon','level_icon','marker'], fallbackIcon || '-'),
+    text:firstValue(item, ['text','content','point','summary','label','name'], '')
+  };
+}
+
+function normalizeDimension(dim, index){
+  dim = dim || {};
+  var score = clampScore(firstValue(dim, ['score','health_score','value','rating'], 0));
+  var meta = scoreMeta(score);
+  var detail = dim.detail || dim.analysis || {};
+  var bulletSource = firstValue(detail, ['bullets','points','items'], null) || firstValue(dim, ['bullets','points','findings','drivers','key_points'], []);
+  var bullets = toArray(bulletSource).map(function(item){
+    if(item && typeof item === 'object' && item.text !== undefined) return item;
+    return normalizeBullet(item, '-');
+  }).filter(function(b){ return b && b.text; });
+  var name = firstValue(dim, ['name','title','dimension','label'], 'Dimension ' + (index + 1));
+  var role = firstValue(dim, ['role'], '');
+  var nextValidation = toArray(detail.next_validation || detail.nextValidation || []);
+  return {
+    id: normalizeDimId(firstValue(dim, ['id','key','dimension_id','code'], name), index),
+    icon: firstValue(dim, ['icon','emoji'], '#'),
+    name: name,
+    score: score,
+    color: firstValue(dim, ['color'], meta.color),
+    colorBg: firstValue(dim, ['colorBg','color_bg','background'], meta.colorBg),
+    colorBorder: firstValue(dim, ['colorBorder','color_border','border'], meta.colorBorder),
+    role: role,
+    brief: firstValue(dim, ['brief','summary','description','verdict','status'], ''),
+    detail: {
+      title: firstValue(detail, ['title','name'], name),
+      content: firstValue(detail, ['content','analysis','summary','description'], firstValue(dim, ['analysis_text','detail_text','summary'], '')),
+      bullets: bullets,
+      next_validation: nextValidation
+    }
+  };
+}
+
+function renderTextBlock(value){
+  if(Array.isArray(value)){
+    return value.map(function(item){ return '<div>' + escapeHtml(firstValue(item, ['text','content','summary','label','name'], item)) + '</div>'; }).join('');
+  }
+  return escapeHtml(value || '').replace(/\n/g, '<br>');
+}
+
+function setTextById(id, value){
+  var el = document.getElementById(id);
+  if(el && value !== undefined && value !== null && value !== '') el.textContent = value;
+}
+
+function renderAiOverview(data){
+  data = data || {};
+  var scoreValue = firstValue(data, ['score','overall_score','health_score','ai_score'], null);
+  if(scoreValue !== null) AI_OVERVIEW_SCORE = clampScore(scoreValue);
+  updateAiScoreCircle(AI_OVERVIEW_SCORE);
+
+  var healthLabel = firstValue(data, ['health_label','healthLabel','status_label'], null);
+  var healthSummary = firstValue(data, ['health_summary','healthSummary','summary'], null);
+  var verdictObj = data.verdict;
+  var verdictText = null;
+  var verdictClass = null;
+  if(verdictObj && typeof verdictObj === 'object'){
+    verdictText = verdictObj.text || verdictObj.label || null;
+    verdictClass = verdictObj.level || verdictObj.class || null;
+  } else {
+    verdictText = firstValue(data, ['verdict_tag','verdictTag','verdict'], null);
+  }
+  setTextById('ai-health-label', healthLabel);
+  setTextById('ai-health-summary', healthSummary);
+  var verdictEl = document.getElementById('ai-verdict-tag');
+  if(verdictEl && verdictText){
+    var meta = scoreMeta(AI_OVERVIEW_SCORE == null ? 0 : AI_OVERVIEW_SCORE);
+    verdictEl.className = 'ai-verdict ' + (verdictClass === 'good' ? 'good' : verdictClass === 'poor' ? 'poor' : verdictClass === 'warn' ? 'warn' : meta.verdictClass);
+    verdictEl.textContent = verdictText;
+  }
+  var summaryItems = data.standard_diagnosis && data.standard_diagnosis.summary_items ? data.standard_diagnosis.summary_items : data.summary_items;
+  renderSummaryItems(buildDeepSummaryItems(summaryItems, data));
+}
+
+var _dashboardPollTimer=null;
+
+function dashboardCacheKey(){
+  return AI_DASHBOARD_CACHE_PREFIX + CURRENT_PERIOD;
+}
+
+function readDashboardCache(){
+  try{
+    var raw = window.localStorage ? window.localStorage.getItem(dashboardCacheKey()) : null;
+    if(!raw) return null;
+    var cached = JSON.parse(raw);
+    return cached && cached.data ? cached.data : cached;
+  }catch(e){
+    return null;
+  }
+}
+
+function writeDashboardCache(data){
+  try{
+    if(!window.localStorage || !data || data.status !== 'ready') return;
+    window.localStorage.setItem(dashboardCacheKey(), JSON.stringify({cached_at:Date.now(), data:data}));
+  }catch(e){}
+}
+
+async function loadAiInsights(){
+  if(_dashboardPollTimer){clearInterval(_dashboardPollTimer);_dashboardPollTimer=null;}
+  var cachedDashboard = readDashboardCache();
+  if(cachedDashboard){
+    _renderDashboardData(cachedDashboard, true);
+  }
+  try{
+    var resp = await fetch('/api/insights/dashboard?period='+encodeURIComponent(CURRENT_PERIOD));
+    if(!resp.ok) throw new Error('dashboard insight request failed: ' + resp.status);
+    var data = await resp.json();
+    if(data.status==='running'||data.status==='pending'){
+      if(cachedDashboard) return;
+      var overviewEl = document.getElementById('ai-health-summary');
+      if(overviewEl) overviewEl.textContent='AI动态解读生成中...';
+      var verdictEl = document.getElementById('ai-verdict-tag');
+      if(verdictEl){verdictEl.textContent='生成中';verdictEl.className='ai-verdict warn';}
+      _dashboardPollTimer=setInterval(async function(){
+        try{
+          var r2=await fetch('/api/insights/dashboard?period='+encodeURIComponent(CURRENT_PERIOD));
+          if(!r2.ok) return;
+          var d2=await r2.json();
+          if(d2.status==='ready'){
+            clearInterval(_dashboardPollTimer);_dashboardPollTimer=null;
+            _renderDashboardData(d2);
+          } else if(d2.status==='failed'){
+            clearInterval(_dashboardPollTimer);_dashboardPollTimer=null;
+            var ov=document.getElementById('ai-health-summary');
+            if(ov) ov.textContent=d2.error_message||'AI动态解读生成失败';
+            AI_DIMS = DEFAULT_AI_DIMS.map(function(d,i){return normalizeDimension(d,i);});
+            buildAiDims();
+            renderCauseChain(buildCauseChainFromParams());
+            renderOffsetFactors(buildOffsetFactorsFromParams());
+          }
+        }catch(e){console.warn('poll dashboard failed',e);}
+      },3000);
+      return;
+    }
+    if(data.status==='failed'){
+      if(cachedDashboard) return;
+      var ov2=document.getElementById('ai-health-summary');
+      if(ov2) ov2.textContent=(data.error_message||'AI动态解读生成失败')+'，正在尝试使用规则引擎重新生成...';
+      AI_DIMS = DEFAULT_AI_DIMS.map(function(d,i){return normalizeDimension(d,i);});
+      buildAiDims();
+      renderCauseChain(buildCauseChainFromParams());
+      renderOffsetFactors(buildOffsetFactorsFromParams());
+      if(!cachedDashboard) triggerDashboardInsightJob();
+      return;
+    }
+    if(data.status==='missing'){
+      if(cachedDashboard) return;
+      var ov3=document.getElementById('ai-health-summary');
+      if(ov3) ov3.textContent='AI动态解读尚未生成，正在自动生成...';
+      AI_DIMS = DEFAULT_AI_DIMS.map(function(d,i){return normalizeDimension(d,i);});
+      buildAiDims();
+      renderCauseChain(buildCauseChainFromParams());
+      renderOffsetFactors(buildOffsetFactorsFromParams());
+      triggerDashboardInsightJob();
+      return;
+    }
+    _renderDashboardData(data);
+  } catch(err){
+    console.error(err);
+    if(cachedDashboard) return;
+    AI_DIMS = DEFAULT_AI_DIMS.map(function(d,i){return normalizeDimension(d,i);});
+    buildAiDims();
+    renderCauseChain(buildCauseChainFromParams());
+    renderOffsetFactors(buildOffsetFactorsFromParams());
+  }
+}
+
+function triggerDashboardInsightJob(){
+  fetch('/api/insights/jobs', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({period:CURRENT_PERIOD,scope:'dashboard',force_refresh:false})
+  }).then(function(resp){ if(!resp.ok) throw new Error('HTTP '+resp.status); return resp.json(); })
+    .then(function(data){
+      if(data.job_id){
+        pollDashboardJob(data.job_id);
+      } else {
+        setTimeout(loadAiInsights, 1000);
+      }
+    }).catch(function(err){
+      console.warn('triggerDashboardInsightJob failed', err);
+    });
+}
+
+function pollDashboardJob(jobId){
+  if(_dashboardPollTimer){clearInterval(_dashboardPollTimer);_dashboardPollTimer=null;}
+  _dashboardPollTimer=setInterval(async function(){
+    try{
+      var resp=await fetch('/api/insights/jobs/'+jobId);
+      if(!resp.ok) return;
+      var job=await resp.json();
+      if(job.status==='finished'||job.status==='partial_failed'||job.status==='failed'){
+        clearInterval(_dashboardPollTimer);_dashboardPollTimer=null;
+        loadAiInsights();
+      }
+    }catch(e){console.warn('poll dashboard job failed',e);}
+  },3000);
+}
+
+function _renderDashboardData(data, fromClientCache){
+  renderAiOverview(data);
+  AI_DIMS = toArray(firstValue(data, ['dimensions','ai_dimensions','dims'], [])).map(normalizeDimension);
+  if(!AI_DIMS.length) AI_DIMS = DEFAULT_AI_DIMS.map(function(d,i){return normalizeDimension(d,i);});
+  buildAiDims();
+  renderCauseChain(firstValue(data, ['root_cause_chain','cause_chain','causeChain','ai_cause_chain'], []));
+  renderOffsetFactors(firstValue(data, ['offset_factors','offsetFactors'], []));
+  renderEmergingFindings(firstValue(data, ['emerging_findings','emergingFindings'], []));
+  if(!fromClientCache) writeDashboardCache(data);
+}
+
+function renderCauseChain(value){
+  var el = document.getElementById('ai-cause-chain');
+  if(!el) return;
+  var items = value && Array.isArray(value.nodes) ? value.nodes : toArray(value);
+  var hasRealData = items.some(function(item){
+    var label = typeof item === 'string' ? item : firstValue(item, ['label','name','text','title'], '');
+    return !isPlaceholderText(label);
+  });
+  // 如果后端没有有效数据，且原始HTML中已存在写好的根因链节点，保留原始内容
+  if((!items.length || !hasRealData) && el.querySelectorAll('.cause-tag').length > 1){
+    return;
+  }
+  if(!items.length || !hasRealData){
+    items = buildCauseChainFromParams();
+  }
+  if(!items.length){
+    el.innerHTML = '<div class="cause-tag" style="background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.3);color:var(--muted);">Waiting for AI cause-chain data</div>';
+    return;
+  }
+  var html = items.map(function(item, idx){
+    var label = typeof item === 'string' ? item : firstValue(item, ['label','name','text','title'], '');
+    var tone = typeof item === 'string' ? '' : firstValue(item, ['tone','type','status'], '');
+    var color = tone === 'good' || tone === 'positive' ? 'var(--green)' : tone === 'warn' || tone === 'warning' ? 'var(--yellow)' : tone === 'bad' || tone === 'risk' || tone === 'negative' ? 'var(--red)' : 'var(--muted)';
+    var tag = '<div class="cause-tag" style="background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.3);color:'+color+';">'+escapeHtml(label)+'</div>';
+    if(idx === 0) return tag;
+    return '<div class="cause-arrow">&gt;</div>' + tag;
+  }).join('');
+  el.innerHTML = html;
+}
+
+function renderInsightList(id, value){
+  var el = document.getElementById(id);
+  if(!el) return;
+  var items = toArray(value);
+  if(!items.length){
+    el.textContent = 'No data';
+    return;
+  }
+  el.innerHTML = items.map(function(item){
+    var text = typeof item === 'string' ? item : firstValue(item, ['text','content','summary','label','name'], '');
+    return '<div style="margin-bottom:4px;">' + escapeHtml(text) + '</div>';
+  }).join('');
+}
+
+function renderSummaryItems(items){
+  var el = document.getElementById('ai-summary-text');
+  if(!el) return;
+  items = toArray(items);
+  if(!items.length){
+    el.innerHTML = '<div style="color:var(--muted);">暂无摘要数据</div>';
+    return;
+  }
+  var colorMap = {
+    red: 'var(--red)',
+    yellow: 'var(--yellow)',
+    green: 'var(--green)',
+    accent: 'var(--accent)',
+    purple: 'var(--purple)'
+  };
+  el.innerHTML = items.map(function(item){
+    var label = typeof item === 'string' ? '' : firstValue(item, ['label'], '');
+    var color = typeof item === 'string' ? 'yellow' : firstValue(item, ['color'], 'yellow');
+    var text = typeof item === 'string' ? item : firstValue(item, ['text','content'], '');
+    var dotColor = colorMap[color] || colorMap.yellow;
+    var labelHtml = label ? '<span class="summary-label">'+escapeHtml(label)+'：</span>' : '';
+    return '<div class="summary-item">' +
+      '<span class="summary-dot" style="background:'+dotColor+';"></span>' +
+      '<div>'+labelHtml+'<span class="summary-text">'+escapeHtml(text)+'</span></div>' +
+      '</div>';
+  }).join('');
+}
+
+function stripHtmlText(value){
+  var text = String(value || '');
+  return text.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function limitText(value, maxLen){
+  var text = stripHtmlText(value);
+  if(!maxLen || text.length <= maxLen) return text;
+  return text.slice(0, maxLen - 1) + '…';
+}
+
+function summarizeDimensionForPanel(dim){
+  if(!dim) return '';
+  var detail = dim.detail || {};
+  var brief = stripHtmlText(firstValue(dim, ['brief'], ''));
+  var content = stripHtmlText(firstValue(detail, ['content'], ''));
+  var bullets = toArray(detail.bullets).map(function(b){
+    return stripHtmlText(typeof b === 'string' ? b : firstValue(b, ['text','content'], ''));
+  }).filter(function(text){
+    return text && text.indexOf('状态：') !== 0 && text.indexOf('当前为') === -1 && text.indexOf('规则引擎综合判断') === -1;
+  });
+  var validations = toArray(detail.next_validation || dim.next_validation).filter(Boolean).slice(0, 2);
+  var parts = [];
+  var base = content || brief;
+  if(content && brief && content.indexOf(brief) >= 0) base = content;
+  if(!base || base.indexOf('规则引擎评分') >= 0 || base.indexOf('规则引擎综合判断') >= 0){
+    var fallbackByType = {
+      scale:'规模端仍处观察区间，ANR企稳需要与新增放款质量同步验证；若增长来自高风险客群，后续风险成本可能抵消规模收益。',
+      cost:'成本端是对冲项而非单独的利润修复答案；资金成本、销售成本和运营费用率若能继续下行，才有能力吸收部分风险成本压力。',
+      transform:'转型进展需要看产品、渠道和客群结构是否同步改善；消金增长、直销产能和客群上移若不匹配，短期会形成利润节奏错配。',
+      outlook:'综合前瞻仍偏待验证，关键不在单月指标改善，而在风险成本、规模质量和成本抵消能否连续几个周期形成同向修复。'
+    };
+    base = fallbackByType[dim.id] || base;
+  }
+  if(base) parts.push(base);
+  if(bullets.length && base.indexOf('主要依据') < 0 && base.indexOf(bullets[0]) < 0) parts.push(bullets[0]);
+  if(validations.length) parts.push('后续重点验证：' + validations.join('、'));
+  return limitText(parts.join('；'), 110);
+}
+
+function buildDeepSummaryItems(items, data){
+  data = data || {};
+  var source = toArray(items).filter(function(item){
+    var text = typeof item === 'string' ? item : firstValue(item, ['text','content'], '');
+    return text && !isPlaceholderText(text);
+  }).map(function(item){
+    if(typeof item === 'string') return {type:'outlook', label:'综合判断', color:'yellow', text:item};
+    return {
+      type:firstValue(item, ['type'], 'outlook'),
+      label:firstValue(item, ['label'], ''),
+      color:firstValue(item, ['color'], 'yellow'),
+      text:firstValue(item, ['text','content'], '')
+    };
+  });
+  var dims = toArray(firstValue(data, ['dimensions','ai_dimensions','dims'], [])).map(normalizeDimension);
+  var dimMap = {};
+  dims.forEach(function(dim){ if(dim && dim.id) dimMap[dim.id] = dim; });
+  var meta = {
+    risk:{label:'风险成本', color:'red'},
+    scale:{label:'规模动能', color:'yellow'},
+    cost:{label:'成本效率', color:'green'},
+    transform:{label:'转型进展', color:'accent'},
+    profit:{label:'利润健康', color:'red'},
+    outlook:{label:'综合前瞻', color:'purple'}
+  };
+  var seen = {};
+  source = source.map(function(item){
+    var dim = dimMap[item.type];
+    var deeper = summarizeDimensionForPanel(dim);
+    if(deeper && stripHtmlText(item.text).length < 34){
+      item.text = deeper;
+    } else {
+      item.text = limitText(item.text, 120);
+    }
+    item.label = item.label || (meta[item.type] && meta[item.type].label) || '摘要';
+    item.color = item.color || (meta[item.type] && meta[item.type].color) || 'yellow';
+    if(item.type) seen[item.type] = true;
+    return item;
+  });
+  ['risk','scale','cost','transform'].forEach(function(type){
+    if(source.length >= 4 || seen[type] || !dimMap[type]) return;
+    var text = summarizeDimensionForPanel(dimMap[type]);
+    if(text){
+      source.push({type:type, label:meta[type].label, color:meta[type].color, text:text});
+      seen[type] = true;
+    }
+  });
+  if(source.length < 3){
+    var roots = toArray(firstValue(data, ['root_cause_chain','cause_chain','causeChain','ai_cause_chain'], []));
+    roots.forEach(function(root){
+      if(source.length >= 4) return;
+      var text = typeof root === 'string' ? root : firstValue(root, ['label','name','text','title'], '');
+      if(text && !isPlaceholderText(text)){
+        source.push({type:'profit', label:'核心根因', color:'red', text:limitText('主要压力链条指向：' + text + '，需结合风险暴露节奏和利润修复进度持续验证。', 120)});
+      }
+    });
+  }
+  if(source.length < 3){
+    var offsets = toArray(firstValue(data, ['offset_factors','offsetFactors'], []));
+    offsets.forEach(function(offset){
+      if(source.length >= 4) return;
+      var factor = typeof offset === 'string' ? offset : firstValue(offset, ['factor','name','label'], '');
+      var text = typeof offset === 'string' ? '' : firstValue(offset, ['text','content','description'], '');
+      if(factor && !isPlaceholderText(factor)){
+        source.push({type:'cost', label:'抵消因素', color:'green', text:limitText(factor + (text ? '：' + text : '') + '，但仍需验证能否持续对冲主压力。', 120)});
+      }
+    });
+  }
+  return source.slice(0, 4);
+}
+
+function renderOffsetFactors(items){
+  var el = document.getElementById('ai-offset-factors');
+  if(!el) return;
+  items = toArray(items);
+  var hasRealData = items.some(function(item){
+    var factor = typeof item === 'string' ? item : firstValue(item, ['factor','name','label'], '');
+    return !isPlaceholderText(factor);
+  });
+  // 如果后端没有有效数据，且原始HTML中已存在非占位符内容，保留原始内容
+  if((!items.length || !hasRealData) && el.innerHTML && !isPlaceholderText(el.innerHTML)){
+    return;
+  }
+  if(!items.length || !hasRealData){
+    items = buildOffsetFactorsFromParams();
+  }
+  if(!items.length){
+    el.textContent = '暂无抵消因子数据';
+    return;
+  }
+  el.innerHTML = items.map(function(item){
+    var factor = typeof item === 'string' ? item : firstValue(item, ['factor','name','label'], '');
+    var text = typeof item === 'string' ? '' : firstValue(item, ['text','content','description'], '');
+    var evidence = typeof item === 'string' ? [] : toArray(item.evidence);
+    var html = '<div style="margin-bottom:10px;">';
+    html += '<div style="font-weight:700;font-size:11.5px;color:var(--text);">'+escapeHtml(factor)+'</div>';
+    if(text) html += '<div style="font-size:11px;color:var(--muted);margin-top:3px;">'+escapeHtml(text)+'</div>';
+    if(evidence.length){
+      html += '<div class="offset-evidence">' + evidence.map(function(e){return '<div class="offset-evidence-item">• '+escapeHtml(e)+'</div>';}).join('') + '</div>';
+    }
+    html += '</div>';
+    return html;
+  }).join('');
+}
+
+function renderEmergingFindings(items){
+  var box = document.getElementById('ai-emerging-box');
+  var el = document.getElementById('ai-emerging-findings');
+  if(!box || !el) return;
+  items = toArray(items);
+  if(!items.length){
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'block';
+  var typeLabels = {
+    contradiction: '矛盾信号',
+    hidden_risk: '隐藏风险',
+    quality_issue: '质量问题',
+    offset_failure: '抵消失效',
+    structural_shift: '结构迁移',
+    second_order_effect: '二阶影响'
+  };
+  el.innerHTML = items.map(function(item){
+    var type = item.type || 'unknown';
+    var finding = item.finding || '';
+    var confidence = item.confidence || '';
+    var supporting = toArray(item.supporting_facts);
+    var why = item.why_it_matters || '';
+    var next = toArray(item.next_validation);
+    var confColor = confidence === 'high' ? 'var(--red)' : confidence === 'medium' ? 'var(--yellow)' : 'var(--muted)';
+    var html = '<div class="emerging-item">';
+    html += '<span class="emerging-type '+type+'">'+(typeLabels[type] || type)+'</span>';
+    html += '<div class="emerging-finding">'+escapeHtml(finding)+'</div>';
+    html += '<div class="emerging-meta">';
+    if(confidence) html += '<div>置信度：<span style="color:'+confColor+';">'+escapeHtml(confidence)+'</span></div>';
+    if(supporting.length) html += '<div>支撑事实：'+supporting.map(function(s){return escapeHtml(s);}).join('；')+'</div>';
+    if(why) html += '<div>重要性：<strong>'+escapeHtml(why)+'</strong></div>';
+    if(next.length) html += '<div>后续验证：'+next.map(function(n){return escapeHtml(n);}).join('；')+'</div>';
+    html += '</div></div>';
+    return html;
+  }).join('');
+}
+
+function buildAiDims(){
+  var grid = document.getElementById('ai-dims-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+
+  // 如果后端返回维度不足6个，用默认数据补齐，并保持固定顺序
+  if(AI_DIMS.length < 6){
+    var existingMap = {};
+    AI_DIMS.forEach(function(d){existingMap[d.id]=d;});
+    AI_DIMS = DEFAULT_AI_DIMS.map(function(def, idx){
+      return existingMap[def.id] || normalizeDimension(def, idx);
+    });
+  }
+
+  if(!AI_DIMS.length){
+    grid.innerHTML = '<div style="grid-column:1/-1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--muted);font-size:11.5px;">Waiting for AI dimension data.</div>';
+  updateAiScoreCircle(AI_OVERVIEW_SCORE);
+  return;
+  }
+  AI_DIMS.forEach(function(d){
+    var meta = scoreMeta(d.score);
+    var pct = d.score + '%';
+    var html = '<div class="ai-dim-card" data-dim-id="'+escapeHtml(d.id)+'" id="aidim-'+escapeHtml(d.id)+'">' +
+      '<div class="ai-dim-top">' +
+        '<span class="ai-dim-name">'+escapeHtml(d.icon)+' '+escapeHtml(d.name)+'</span>' +
+        '<span class="ai-dim-score-badge" style="background:'+escapeHtml(d.colorBg || meta.colorBg)+';color:'+meta.color+';border:1px solid '+escapeHtml(d.colorBorder || meta.colorBorder)+'">'+d.score+'</span>' +
+      '</div>' +
+      '<div class="ai-dim-bar-wrap"><div class="ai-dim-bar" style="width:'+pct+';background:'+meta.color+'"></div></div>' +
+      '<div class="ai-dim-text">'+escapeHtml(d.brief)+'</div>' +
+    '</div>';
+    grid.insertAdjacentHTML('beforeend', html);
+  });
+  grid.querySelectorAll('.ai-dim-card').forEach(function(card){
+    card.addEventListener('click', function(){ showAiDetail(card.getAttribute('data-dim-id')); });
+  });
+  updateAiScoreCircle(AI_OVERVIEW_SCORE);
+  setTimeout(function(){ showAiDetail((AI_DIMS.find(function(d){return d.id==='outlook';}) || AI_DIMS[0]).id); }, 100);
+}
+
+function updateAiScoreCircle(scoreOverride){
+  var avg = scoreOverride;
+  if(avg === undefined || avg === null){
+    avg = AI_DIMS.length ? Math.round(AI_DIMS.reduce(function(s,d){return s+d.score;},0) / AI_DIMS.length) : 0;
+  }
+  avg = clampScore(avg);
+  var numEl = document.getElementById('ai-score-num');
+  var arcEl = document.getElementById('ai-score-arc');
+  if(numEl) numEl.textContent = avg;
+  var full = 188.5;
+  var filled = full * avg / 100;
+  var offset = full - filled;
+  if(arcEl) arcEl.setAttribute('stroke-dashoffset', offset.toFixed(1));
+  var meta = scoreMeta(avg);
+  if(numEl) numEl.style.color = meta.color;
+}
+
+function showAiDetail(dimId){
+  var dim = AI_DIMS.find(function(d){return d.id===dimId;});
+  if(!dim) return;
+  document.querySelectorAll('.ai-dim-card').forEach(function(c){c.classList.remove('active');});
+  var cardEl = document.getElementById('aidim-'+dimId);
+  if(cardEl) cardEl.classList.add('active');
+  var iconEl = document.getElementById('ai-detail-icon');
+  var nameEl = document.getElementById('ai-detail-dim-name');
+  var roleEl = document.getElementById('ai-detail-role');
+  var contentEl = document.getElementById('ai-detail-content');
+  var nextValEl = document.getElementById('ai-detail-next-validation');
+  if(iconEl) iconEl.textContent = dim.icon;
+  if(nameEl) nameEl.textContent = dim.detail.title || dim.name;
+  if(roleEl){
+    roleEl.innerHTML = '';
+  }
+  var bullets = toArray(dim.detail.bullets).map(function(b){
+    var icon = b.icon || '-';
+    var text = b.text || '';
+    var safeText = text.replace(/<strong>/g, '<strong>').replace(/<\/strong>/g, '</strong>');
+    safeText = safeText.replace(/<script/gi, '&lt;script').replace(/<style/gi, '&lt;style').replace(/<div/gi, '&lt;div').replace(/<span/gi, '&lt;span').replace(/<table/gi, '&lt;table').replace(/<br>/gi, '');
+    return '<div class="ai-detail-bullet"><span class="bul-icon">'+escapeHtml(icon)+'</span><span class="bul-text">'+safeText+'</span></div>';
+  }).join('');
+  if(contentEl) contentEl.innerHTML =
+    '<p style="margin-bottom:8px;color:var(--muted);font-size:11.5px;">'+escapeHtml(dim.detail.content || dim.brief || '')+'</p>' +
+    '<div class="ai-detail-bullets">'+bullets+'</div>';
+  if(nextValEl){
+    var validations = toArray(dim.detail.next_validation);
+    if(validations.length){
+      nextValEl.innerHTML = '<div class="next-val-box"><div class="next-val-title">🔎 后续验证指标</div>' +
+        validations.map(function(v){return '<div class="next-val-item">• '+escapeHtml(v)+'</div>';}).join('') +
+        '</div>';
+    } else {
+      nextValEl.innerHTML = '';
+    }
+  }
+}
+
+var AI_SANKEY_CHART = null;
+
+var SCENARIOS = {
+  bear: {anr:1700, cg:10, price:17.5, closs:9.5, npl:1.8, fund:2.2, scost:1.8, ocost:1.4, tax:1.2, label:'🐻 悲观情景'},
+  base: {anr:1900, cg:25, price:18.2, closs:7.8, npl:1.2, fund:2.05, scost:1.6, ocost:1.3, tax:1.2, label:'📊 基准情景'},
+  bull: {anr:2200, cg:35, price:18.5, closs:6.5, npl:0.9, fund:1.85, scost:1.4, ocost:1.2, tax:1.1, label:'🐂 乐观情景'},
+};
+
+function loadScenario(sc){
+  var s = SCENARIOS[sc];
+  if(!s) return;
+  CURRENT_SCENARIO = sc;
+  var ids = ['anr','cg','price','closs','npl','fund','scost','ocost','tax'];
+  ids.forEach(function(k){
+    var sl = document.getElementById('sl-'+k);
+    if(sl){sl.value = s[k]; document.getElementById('pv-'+k).textContent = s[k];}
+  });
+  // 更新按钮激活状态
+  document.querySelectorAll('.ai-sc-btn').forEach(function(b){
+    b.classList.remove('active');
+  });
+  var btns = document.querySelectorAll('.ai-sc-btn');
+  var scMap = {bear:0, base:1, bull:2};
+  if(btns[scMap[sc]]) btns[scMap[sc]].classList.add('active');
+  updatePredict();
+}
+
+function getSliderVal(id){
+  var sl = document.getElementById('sl-'+id);
+  return sl ? parseFloat(sl.value) : 0;
+}
+
+function isPlaceholderText(text){
+  if(!text) return true;
+  var t = String(text).trim().toLowerCase();
+  var placeholders = ['未识别','暂无','无数据','waiting','no data','未检测到','不存在','无效','not identified','none'];
+  return placeholders.some(function(p){ return t.indexOf(p) !== -1; });
+}
+
+function buildCauseChainFromParams(){
+  var price = getSliderVal('price');
+  var closs = getSliderVal('closs');
+  var fund = getSliderVal('fund');
+  var scost = getSliderVal('scost');
+  var ocost = getSliderVal('ocost');
+  var tax = getSliderVal('tax');
+  var roa = price - closs - fund - scost - ocost - tax;
+  var chain = [];
+  if(roa < 0){
+    chain.push({label:'净利润亏损（ROA ' + roa.toFixed(2) + '%）', tone:'negative'});
+    chain.push({label:'信贷损失率 ' + closs.toFixed(1) + '% 侵蚀利润', tone:'negative'});
+    if(closs > price * 0.4) chain.push({label:'风险成本超过定价利差的40%', tone:'warning'});
+    chain.push({label:'资金+运营+销售+税合计 ' + (fund+scost+ocost+tax).toFixed(2) + '%', tone:'negative'});
+  } else {
+    chain.push({label:'净利润盈利（ROA ' + roa.toFixed(2) + '%）', tone:'positive'});
+    chain.push({label:'信贷损失率可控 ' + closs.toFixed(1) + '%', tone:'good'});
+  }
+  return chain;
+}
+
+function buildOffsetFactorsFromParams(){
+  var factors = [];
+  var cg = getSliderVal('cg');
+  var fund = getSliderVal('fund');
+  var ocost = getSliderVal('ocost');
+  var price = getSliderVal('price');
+  var closs = getSliderVal('closs');
+  if(cg > 15){
+    factors.push({factor:'消金规模高增长', text:'消费金融增速 ' + cg.toFixed(0) + '%，部分对冲传统业务规模压降的影响。', evidence:['消金增速+' + cg.toFixed(0) + '%']});
+  }
+  if(fund < 2.5){
+    factors.push({factor:'综合资金成本优势', text:'综合资金成本 ' + fund.toFixed(2) + '%，处于行业较低水平。', evidence:['资金成本' + fund.toFixed(2) + '%']});
+  }
+  if(ocost < 1.5){
+    factors.push({factor:'运营成本优化', text:'运营成本率 ' + ocost.toFixed(1) + '%，成本端呈现改善趋势。', evidence:['运营成本率' + ocost.toFixed(1) + '%']});
+  }
+  if(price > 17 && closs < 7){
+    factors.push({factor:'定价覆盖风险', text:'综合定价率 ' + price.toFixed(1) + '% 高于信贷损失率 ' + closs.toFixed(1) + '%，利差空间健康。', evidence:['定价率' + price.toFixed(1) + '%','损失率' + closs.toFixed(1) + '%']});
+  }
+  if(factors.length === 0){
+    factors.push({factor:'当前参数下正向抵消不显著', text:'基于当前杜邦参数，未检测到显著的正向抵消效应。', evidence:[]});
+  }
+  return factors;
+}
+
+function updatePredict(){
+  var anr = getSliderVal('anr');
+  var cg = getSliderVal('cg');
+  var price = getSliderVal('price');
+  var closs = getSliderVal('closs');
+  var npl = getSliderVal('npl');
+  var fund = getSliderVal('fund');
+  var scost = getSliderVal('scost');
+  var ocost = getSliderVal('ocost');
+  var tax = getSliderVal('tax');
+
+  var vals = {anr:anr,cg:cg,price:price,closs:closs,npl:npl,fund:fund,scost:scost,ocost:ocost,tax:tax};
+  Object.keys(vals).forEach(function(k){
+    var el = document.getElementById('pv-'+k);
+    if(el) el.textContent = vals[k];
+  });
+
+  var totalCost = closs + fund + scost + ocost + tax;
+  var roa = price - totalCost;
+  var roaAdj = roa * 0.01;
+  var nonLoanProfit = -5;
+  var loanProfit = anr * roaAdj;
+  var netProfit = loanProfit + nonLoanProfit;
+  var revenue = anr * price * 0.01;
+  var margin = revenue > 0 ? (netProfit / revenue * 100) : 0;
+  var impact = {
+    credit_loss_0_5pct: +(anr * 0.005).toFixed(2),
+    pricing_0_5pct: +(anr * 0.005).toFixed(2),
+    roa_1pct: +(anr * 0.01).toFixed(2)
+  };
+  LAST_PREDICT_RESULT = {
+    scenario: CURRENT_SCENARIO,
+    scenario_label: SCENARIOS[CURRENT_SCENARIO] ? SCENARIOS[CURRENT_SCENARIO].label : CURRENT_SCENARIO,
+    params: vals,
+    total_cost_rate: +totalCost.toFixed(2),
+    roa: +roa.toFixed(2),
+    loan_profit: +loanProfit.toFixed(2),
+    non_loan_profit: nonLoanProfit,
+    net_profit: +netProfit.toFixed(2),
+    revenue: +revenue.toFixed(2),
+    margin: +margin.toFixed(2),
+    impact: impact
+  };
+
+  var roaEl = document.getElementById('pred-roa');
+  var profEl = document.getElementById('pred-profit');
+  var margEl = document.getElementById('pred-margin');
+  var vsEl = document.getElementById('pred-profit-vs');
+
+  if(roaEl){roaEl.textContent = roa.toFixed(2) + '%';roaEl.style.color = roa >= 1 ? 'var(--green)' : roa >= 0 ? 'var(--yellow)' : 'var(--red)';}
+  if(profEl){profEl.textContent = (netProfit>=0?'+':'') + netProfit.toFixed(1) + ' 亿';profEl.style.color = netProfit >= 0 ? 'var(--green)' : 'var(--red)';}
+  if(margEl){margEl.textContent = margin.toFixed(1) + '%';margEl.style.color = margin >= 5 ? 'var(--green)' : margin >= 0 ? 'var(--yellow)' : 'var(--red)';}
+  if(vsEl){var diff = netProfit - (-17);vsEl.textContent = '较2025实际 -17亿：' + (diff>=0?'+':'') + diff.toFixed(1) + ' 亿';vsEl.style.color = diff>=0 ? 'var(--green)' : 'var(--red)';}
+
+  renderAiSankey(price, closs, fund, scost, ocost, tax, roa, anr, loanProfit, nonLoanProfit);
+  renderSensTable(price, closs, fund, scost, ocost, tax, anr);
+  scheduleScenarioCacheLookup();
+}
+// ══════════════════════════════════════════════════════════
+// 桑基图 — 杜邦拆解：L0净利润 ← ANR×ROA ← 定价−成本
+// ══════════════════════════════════════════════════════════
+function renderAiSankey(price, closs, fund, scost, ocost, tax, roa, anr, loanProfit, nonLoanProfit){
+  var el = document.getElementById('ai-sankey-chart');
+  if(!el) return;
+  if(!AI_SANKEY_CHART){
+    var dpr = window.devicePixelRatio || 1;
+    AI_SANKEY_CHART = echarts.init(el, null, {renderer:'canvas', devicePixelRatio: dpr});
+    window.addEventListener('resize',function(){try{AI_SANKEY_CHART.resize();}catch(e){}});
+  }
+
+  var revenue   = +(anr * price / 100).toFixed(1);
+  var clossAmt  = +(anr * closs / 100).toFixed(1);
+  var fundAmt   = +(anr * fund  / 100).toFixed(1);
+  var scostAmt  = +(anr * scost / 100).toFixed(1);
+  var ocostAmt  = +(anr * ocost / 100).toFixed(1);
+  var bizCost   = +(scostAmt + ocostAmt).toFixed(1);
+  var taxAmt    = +(anr * tax   / 100).toFixed(1);
+  loanProfit = +loanProfit.toFixed(1);
+  nonLoanProfit = +nonLoanProfit.toFixed(1);
+  var totalProfit = +(loanProfit + nonLoanProfit).toFixed(1);
+
+  var profitOK  = loanProfit >= 0;
+  var roaColor  = roa >= 1 ? '#34d399' : roa >= 0 ? '#fbbf24' : '#f87171';
+  var profColor = totalProfit >= 0 ? '#34d399' : '#f87171';
+  var loanPDisp = Math.max(loanProfit, 0.5);
+  var nonPDisp  = Math.abs(nonLoanProfit);
+
+  var nANR      = 'L1 贷款规模 ANR\n' + anr + ' 亿';
+  var nREV      = '定价收入\n' + revenue + ' 亿';
+  var nCLOSS    = '-信贷成本\n' + clossAmt + ' 亿';
+  var nFUND     = '-资金成本\n' + fundAmt + ' 亿';
+  var nBIZ      = '-业务成本\n' + bizCost + ' 亿';
+  var nTAX      = '-税及其他\n' + taxAmt + ' 亿';
+  var nLOANP    = (profitOK ? '贷款业务净利润\n+' : '贷款业务净亏损\n') + loanProfit + ' 亿';
+  var nNONLOAN  = '非贷款业务\n' + (nonLoanProfit >= 0 ? '+' : '') + nonLoanProfit + ' 亿';
+  var nTOTAL    = 'L0 管理口径净利润\n' + (totalProfit >= 0 ? '+' : '') + totalProfit + ' 亿';
+
+  var nodes = [
+    {name:nANR,      itemStyle:{color:'rgba(79,142,247,.9)'},        depth:0},
+    {name:nREV,      itemStyle:{color:'rgba(52,211,153,.8)'},        depth:1},
+    {name:nCLOSS,    itemStyle:{color:'rgba(248,113,113,.85)'},      depth:2},
+    {name:nFUND,     itemStyle:{color:'rgba(251,191,36,.8)'},        depth:2},
+    {name:nBIZ,      itemStyle:{color:'rgba(251,146,60,.8)'},        depth:2},
+    {name:nTAX,      itemStyle:{color:'rgba(148,163,184,.75)'},      depth:2},
+    {name:nLOANP,    itemStyle:{color:roaColor},                     depth:3},
+    {name:nNONLOAN,  itemStyle:{color:'rgba(100,116,139,.7)'},       depth:3},
+    {name:nTOTAL,    itemStyle:{color:profColor},                    depth:4},
+  ];
+
+  var links = [
+    {source:nANR, target:nREV, value:revenue, lineStyle:{color:'rgba(52,211,153,.3)'}},
+    {source:nREV, target:nCLOSS, value:clossAmt, lineStyle:{color:'rgba(248,113,113,.4)'}},
+    {source:nREV, target:nFUND,  value:fundAmt,  lineStyle:{color:'rgba(251,191,36,.35)'}},
+    {source:nREV, target:nBIZ,   value:bizCost,  lineStyle:{color:'rgba(251,146,60,.35)'}},
+    {source:nREV, target:nTAX,   value:taxAmt,   lineStyle:{color:'rgba(148,163,184,.3)'}},
+    {source:nREV, target:nLOANP, value:loanPDisp, lineStyle:{color:profitOK ? 'rgba(52,211,153,.4)' : 'rgba(248,113,113,.4)'}},
+    {source:nLOANP,   target:nTOTAL, value:Math.max(loanProfit, 0.5), lineStyle:{color:profitOK ? 'rgba(52,211,153,.35)' : 'rgba(248,113,113,.35)'}},
+    {source:nNONLOAN, target:nTOTAL, value:nonPDisp, lineStyle:{color:'rgba(100,116,139,.25)'}},
+  ];
+
+  var opt = {
+    backgroundColor:'transparent',
+    tooltip:{
+      trigger:'item', triggerOn:'mousemove',
+      backgroundColor:'#1a1d27', borderColor:'#2e3354',
+      textStyle:{color:'#e2e8f0', fontSize:11.5},
+      formatter:function(p){
+        if(p.dataType==='edge'){
+          var src = p.data.source.split('\n')[0];
+          var tgt = p.data.target.split('\n')[0];
+          var pctR = revenue > 0 ? (p.value/revenue*100).toFixed(1) : '--';
+          return '<b>' + src + '</b> > <b>' + tgt + '</b>'
+            + '<br/>金额：<b>' + (+p.value).toFixed(1) + ' 亿</b>'
+            + '<br/>占收入：<b>' + pctR + '%</b>';
+        } else {
+          var parts = p.name.split('\n');
+          var roaPct = anr > 0 ? (p.value / anr * 100).toFixed(2) : '--';
+          return '<b>' + parts[0] + '</b>' + (parts[1] ? '<br/>' + parts[1] : '')
+            + '<br/>占 ANR：<b>' + roaPct + '%</b>';
+        }
+      }
+    },
+    series:[{
+      type:'sankey',
+      left:'2%', right:'16%', top:'6%', bottom:'6%',
+      nodeWidth:20, nodeGap:12, layoutIterations:64, nodeAlign:'left',
+      emphasis:{focus:'adjacency'},
+      label:{fontSize:10, color:'#e2e8f0', fontWeight:600, formatter:function(p){var parts=p.name.split('\n');return parts[0]+(parts[1]?'\n'+parts[1]:'');}},
+      lineStyle:{curveness:0.5, opacity:0.45},
+      data: nodes, links: links,
+    }]
+  };
+  AI_SANKEY_CHART.setOption(opt, true);
+}
+
+// ══════════════════════════════════════════════════════════
+// 敏感性矩阵
+// ══════════════════════════════════════════════════════════
+function renderSensTable(price, closs, fund, scost, ocost, tax, anr){
+  var container = document.getElementById('ai-sens-table');
+  if(!container) return;
+  var priceDeltas = [-1.5, -0.5, 0, +0.5, +1.5];
+  var clossDeltas = [+2, +1, 0, -1, -2];
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
+  html += '<thead><tr>';
+  html += '<th style="padding:5px 8px;background:var(--surface3);color:var(--muted);border:1px solid var(--border);text-align:left;min-width:90px;">ROA % /损失 >定价</th>';
+  priceDeltas.forEach(function(pd){
+    var lbl = pd===0?'基准':(pd>0?'+':'')+pd+'pct';
+    html += '<th style="padding:5px 8px;background:var(--surface3);color:var(--muted);border:1px solid var(--border);">'+lbl+'</th>';
+  });
+  html += '</tr></thead><tbody>';
+  clossDeltas.forEach(function(cd){
+    var rowLbl = cd===0?'基准':(cd>0?'+':'')+cd+'pct';
+    html += '<tr><td style="padding:5px 8px;background:var(--surface3);color:var(--muted);border:1px solid var(--border);font-weight:600;">'+rowLbl+'</td>';
+    priceDeltas.forEach(function(pd){
+      var r = (price+pd) - (closs+cd) - fund - scost - ocost - tax;
+      var prof = (r * anr / 100).toFixed(0);
+      var isBase = (pd===0 && cd===0);
+      var bgColor = r>=1?'rgba(52,211,153,.2)':r>=0?'rgba(251,191,36,.15)':'rgba(248,113,113,.18)';
+      var textColor = r>=1?'#34d399':r>=0?'#fbbf24':'#f87171';
+      var border = isBase ? '2px solid var(--accent)' : '1px solid var(--border)';
+      html += '<td style="padding:5px 8px;border:'+border+';background:'+bgColor+';color:'+textColor+';font-weight:600;text-align:center;">';
+      html += r.toFixed(2)+'%<br><span style="font-size:9.5px;opacity:.8;">'+(r>=0?'+':'')+prof+'亿</span></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+// AI 叙述
+// ══════════════════════════════════════════════════════════
+function renderScenarioPlaceholder(result){
+  var el = document.getElementById('ai-narrative-text');
+  if(!el) return;
+  result = result || LAST_PREDICT_RESULT || {};
+  var p = result.params || {};
+  var profitColor = result.net_profit >= 0 ? 'var(--green)' : 'var(--red)';
+  var roaColor = result.roa >= 1 ? 'var(--green)' : result.roa >= 0 ? 'var(--yellow)' : 'var(--red)';
+  el.innerHTML = '当前参数组合尚未读取到AI预测解读缓存。<br><br>' +
+    '测算结果：ANR '+(p.anr || '--')+'亿元、综合定价率 '+(p.price || '--')+'%、信贷损失率 '+(p.closs || '--')+'%，ROA为 <strong style="color:'+roaColor+'">'+(result.roa !== undefined ? result.roa.toFixed(2) : '--')+'%</strong>，净利润为 <strong style="color:'+profitColor+'">'+(result.net_profit >= 0 ? '+' : '')+(result.net_profit !== undefined ? result.net_profit.toFixed(1) : '--')+'亿元</strong>。<br><br>' +
+    '<span style="color:var(--muted);font-size:10.5px;">这只是规则测算结果，不是AI解读。点击“生成AI情景解读”后会写入缓存，刷新页面会自动读取真实AI内容。</span>';
+}
+
+function scenarioSignature(result){
+  result = result || {};
+  return JSON.stringify({
+    period: CURRENT_PERIOD,
+    scenario: result.scenario,
+    inputs: result.params,
+    computed: {
+      total_cost_rate: result.total_cost_rate,
+      roa: result.roa,
+      net_profit: result.net_profit,
+      revenue: result.revenue,
+      margin: result.margin
+    },
+    sensitivity: result.impact
+  });
+}
+
+function buildScenarioPayload(result, cacheOnly){
+  result = result || LAST_PREDICT_RESULT;
+  return {
+    period: CURRENT_PERIOD,
+    language: 'zh-CN',
+    cache_only: !!cacheOnly,
+    scenario: result.scenario,
+    scenario_label: result.scenario_label,
+    inputs: {
+      anr: result.params.anr,
+      consumer_finance_growth: result.params.cg,
+      pricing_rate: result.params.price,
+      credit_loss_rate: result.params.closs,
+      npl_rate: result.params.npl,
+      funding_cost_rate: result.params.fund,
+      sales_cost_rate: result.params.scost,
+      opex_rate: result.params.ocost,
+      tax_other_rate: result.params.tax,
+      non_loan_profit: result.non_loan_profit
+    },
+    computed: {
+      total_cost_rate: result.total_cost_rate,
+      roa: result.roa,
+      net_profit: result.net_profit,
+      revenue: result.revenue,
+      margin: result.margin
+    },
+    sensitivity: {
+      credit_loss_0_5pct_impact: result.impact.credit_loss_0_5pct,
+      pricing_0_5pct_impact: result.impact.pricing_0_5pct
+    }
+  };
+}
+
+function scheduleScenarioCacheLookup(){
+  if(!LAST_PREDICT_RESULT) return;
+  var sig = scenarioSignature(LAST_PREDICT_RESULT);
+  LAST_SCENARIO_SIGNATURE = sig;
+  if(sig !== LAST_RENDERED_AI_SIGNATURE){
+    var el = document.getElementById('ai-narrative-text');
+    if(el) el.textContent = '正在查询AI预测解读缓存...';
+  }
+  if(SCENARIO_CACHE_TIMER) clearTimeout(SCENARIO_CACHE_TIMER);
+  SCENARIO_CACHE_TIMER = setTimeout(function(){
+    loadScenarioInsightCache(sig);
+  }, 250);
+}
+
+async function loadScenarioInsightCache(signature){
+  if(!LAST_PREDICT_RESULT || signature !== LAST_SCENARIO_SIGNATURE) return;
+  try{
+    var resp = await fetch('/api/insights/scenario', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(buildScenarioPayload(LAST_PREDICT_RESULT, true))
+    });
+    if(!resp.ok) throw new Error('scenario cache request failed: ' + resp.status);
+    var json = await resp.json();
+    var data = json && json.data ? json.data : json;
+    if(signature !== LAST_SCENARIO_SIGNATURE) return;
+    if(data && data.status === 'ready'){
+      renderScenarioInsight(data, signature);
+    } else {
+      renderScenarioPlaceholder(LAST_PREDICT_RESULT);
+    }
+  }catch(err){
+    console.warn('loadScenarioInsightCache failed', err);
+    if(signature === LAST_SCENARIO_SIGNATURE) renderScenarioPlaceholder(LAST_PREDICT_RESULT);
+  }
+}
+
+async function generateScenarioInsight(){
+  updatePredict();
+  var result = LAST_PREDICT_RESULT;
+  var btn = document.getElementById('ai-generate-scenario-btn');
+  var narrativeEl = document.getElementById('ai-narrative-text');
+  var oldText = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = '生成中...'; }
+  if(narrativeEl) narrativeEl.textContent = '正在读取缓存；如未命中将生成AI情景解读...';
+  try{
+    var signature = scenarioSignature(result);
+    var resp = await fetch('/api/insights/scenario', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(buildScenarioPayload(result, false))
+    });
+    if(!resp.ok) throw new Error('scenario insight request failed: ' + resp.status);
+    var json = await resp.json();
+    var data = json && json.data ? json.data : json;
+    renderScenarioInsight(data, signature);
+  } catch(err){
+    console.error(err);
+    if(narrativeEl) narrativeEl.textContent = 'AI情景解读生成失败，请确认后端服务可用后重试。';
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = oldText; }
+  }
+}
+
+function renderScenarioInsight(data, signature){
+  var el = document.getElementById('ai-narrative-text');
+  if(!el) return;
+  if(signature) LAST_RENDERED_AI_SIGNATURE = signature;
+  data = data || {};
+  var explanation = data.standard_explanation || data.explanation || data;
+  var fields = [
+    ['scenario_label','情景'],
+    ['judgement','判断'],
+    ['profit_driver','利润驱动'],
+    ['key_variable','关键变量'],
+    ['risk_boundary','风险边界'],
+    ['upside_condition','上行条件'],
+    ['sensitivity_comment','敏感性'],
+    ['management_commentary','管理层关注']
+  ];
+  var html = fields.map(function(pair){
+    var value = pair[0] === 'scenario_label' ? data[pair[0]] : explanation[pair[0]];
+    if(value === undefined || value === null || value === '') return '';
+    return '<div style="margin-bottom:7px;"><strong style="color:var(--accent);">'+pair[1]+': </strong>'+renderTextBlock(value)+'</div>';
+  }).join('');
+  var exploration = data.scenario_exploration || data.exploration || {};
+  var explorationFields = [
+    ['fragile_assumption','脆弱假设'],
+    ['hidden_risk','隐藏风险'],
+    ['upside_surprise','上行惊喜']
+  ];
+  explorationFields.forEach(function(pair){
+    var item = exploration[pair[0]];
+    if(!item) return;
+    html += '<div style="margin-top:8px;"><strong style="color:var(--purple);">'+pair[1]+': </strong>'+renderTextBlock(item.insight || item)+'</div>';
+    var facts = toArray(item.supporting_facts || item.facts);
+    if(facts.length){
+      html += '<div style="color:var(--muted);font-size:10.5px;margin-top:3px;">依据：' + facts.map(function(f){return escapeHtml(f);}).join(' / ') + '</div>';
+    }
+  });
+  var watchItems = toArray(data.watch_items || data.watchItems);
+  if(watchItems.length){
+    html += '<div style="margin-top:8px;"><strong style="color:var(--yellow);">后续关注： </strong>' + watchItems.map(function(item){
+      var text = typeof item === 'string' ? item : firstValue(item, ['text','content','summary','label','name'], '');
+      return '<div style="margin-top:4px;">- ' + escapeHtml(text) + '</div>';
+    }).join('') + '</div>';
+  }
+  el.innerHTML = html || '未返回AI情景解读。';
+}
+// ══════════════════════════════════════════════════════════
+// 初始化
+// ══════════════════════════════════════════════════════════
+function applyHashTab(){
+  var h=(location.hash||'').replace(/^#/,'');
+  if(h==='predict' || h==='interpret'){
+    switchTab(h, null);
+  }
+}
+window.addEventListener('DOMContentLoaded', function(){
+  applyHashTab();
+  loadAiInsights();
+  // 延迟初始化确保容器尺寸稳定后高清渲染
+  setTimeout(function(){ updatePredict(); }, 200);
+});
+window.addEventListener('hashchange', applyHashTab);
+</script>
+</body>
+</html>

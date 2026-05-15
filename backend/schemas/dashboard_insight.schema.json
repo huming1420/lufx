@@ -1,0 +1,296 @@
+{
+  "type": "object",
+  "required": [
+    "period",
+    "health_score",
+    "health_label",
+    "standard_diagnosis",
+    "dimensions",
+    "root_cause_chain",
+    "offset_factors",
+    "emerging_findings",
+    "management_questions",
+    "watch_items"
+  ],
+  "properties": {
+    "period": {
+      "type": "string",
+      "minLength": 1
+    },
+    "health_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "health_label": {
+      "type": "string",
+      "enum": ["经营健康", "中性观察", "压力偏大"]
+    },
+    "standard_diagnosis": {
+      "type": "object",
+      "required": ["health_summary", "verdict", "summary_items"],
+      "properties": {
+        "health_summary": {
+          "type": "string",
+          "minLength": 20,
+          "maxLength": 260
+        },
+        "verdict": {
+          "type": "object",
+          "required": ["level", "text"],
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": ["good", "warn", "poor"]
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "additionalProperties": false
+        },
+        "summary_items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "required": ["type", "label", "color", "text"],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["profit", "scale", "risk", "cost", "transform", "outlook"]
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 20
+              },
+              "color": {
+                "type": "string",
+                "enum": ["red", "yellow", "green", "accent", "purple"]
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 220
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["id", "icon", "name", "score", "status", "role", "brief", "detail"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": ["profit", "scale", "risk", "cost", "transform", "outlook"]
+          },
+          "icon": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "status": {
+            "type": "string",
+            "enum": ["red", "yellow", "green"]
+          },
+          "role": {
+            "type": "string",
+            "enum": ["结果承压", "核心拖累", "边际改善", "正向抵消", "结构观察", "待验证"],
+            "minLength": 1,
+            "maxLength": 12
+          },
+          "brief": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "detail": {
+            "type": "object",
+            "required": ["title", "content", "bullets", "next_validation"],
+            "properties": {
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 40
+              },
+              "content": {
+                "type": "string",
+                "minLength": 20,
+                "maxLength": 220
+              },
+              "bullets": {
+                "type": "array",
+                "maxItems": 4,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "icon": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 2
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 200
+                    }
+                  }
+                }
+              },
+              "next_validation": {
+                "type": "array",
+                "maxItems": 5,
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "root_cause_chain": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80
+      }
+    },
+    "offset_factors": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["factor", "text", "evidence"],
+        "properties": {
+          "factor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "emerging_findings": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "finding",
+          "confidence",
+          "supporting_facts",
+          "why_it_matters",
+          "next_validation"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "contradiction",
+              "hidden_risk",
+              "quality_issue",
+              "offset_failure",
+              "structural_shift",
+              "second_order_effect"
+            ]
+          },
+          "finding": {
+            "type": "string",
+            "minLength": 20,
+            "maxLength": 240
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          },
+          "supporting_facts": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          },
+          "why_it_matters": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 180
+          },
+          "next_validation": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 120
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "management_questions": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 120
+      }
+    },
+    "watch_items": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100
+      }
+    }
+  },
+  "additionalProperties": false
+}

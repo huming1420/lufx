@@ -1,0 +1,28 @@
+- [x] card_insight_v2.txt prompt 文件已创建，包含输入说明、标准洞察规则、探索洞察规则、硬性约束、输出 JSON 格式、合格示例和 {{CARD_FACT_PACK}} 占位符
+- [x] dashboard_insight_v2.txt prompt 文件已创建，包含输入说明、标准诊断规则、探索性发现规则、硬性约束、输出 JSON 格式、health_summary 写法、示例和 {{DASHBOARD_FACT_PACK}} 占位符
+- [x] scenario_insight_v2.txt prompt 文件已创建，包含输入说明、标准解释规则、探索性解释规则、硬性约束、输出 JSON 格式、示例和 {{SCENARIO_FACT_PACK}} 占位符
+- [x] card_insight.schema.json 已更新为 v2 结构，包含 standard_insight / evidence 对象数组 / exploratory_insights / deep_dive_questions，含长度和数量约束
+- [x] dashboard_insight.schema.json 已更新为 v2 结构，包含 standard_diagnosis 嵌套对象 / dimensions 嵌套 detail / emerging_findings / management_questions
+- [x] scenario_insight.schema.json 已更新为 v2 结构，包含 standard_explanation / scenario_exploration（使用 $defs/exploration_item），含长度约束
+- [x] dashboard_metrics_mock.json 已从扁平 metrics 数组升级为 core_metrics / segment_metrics / scenario_defaults / rules 结构
+- [x] dashboard_metrics_mock.json 中每个核心指标包含 display_value / display_yoy / display_budget_gap 等显示字段
+- [x] card_config.json 中每个卡片配置包含 business_context / segment_dimensions / allowed_exploration_types / output_slots / schema / enabled 字段
+- [x] rule_engine.py 新增 detect_cross_signals() 函数，能识别 contradiction / offset_failure / quality_issue 跨指标信号
+- [x] rule_engine.py 新增 generate_card_rule_result() 函数，输出 suggested_status / must_mention / do_not_mention / allowed_exploration_types
+- [x] rule_engine.py 新增 generate_dashboard_rule_result() 函数，输出 overall_status / main_pressure / main_offset / must_mention / do_not_mention / allowed_emerging_finding_types
+- [x] rule_engine.py 新增 generate_scenario_rule_result() 函数，输出 scenario_quality / key_variable / risk_boundary_hint / upside_hint / fragile_assumption_hint / hidden_risk_hint / must_mention / do_not_mention
+- [x] rule_engine.py 维度映射已从 profit/scale/pricing/risk/funding/opex 更新为 profit/scale/risk/cost/transform/outlook
+- [x] fact_builder.py 的 build_card_fact_pack() 输出包含 business_context / segments / alerts / driver_ranking / parent_context / rule_result
+- [x] fact_builder.py 的 build_dashboard_fact_pack() 输出包含 dupont / dimension_scores / root_causes / offset_factors / alerts / cross_signals / rule_result
+- [x] fact_builder.py 的 build_scenario_fact_pack() 输出包含 inputs / computed / benchmark / sensitivity / rule_result，均含 name/display_value
+- [x] fact_builder.py 已适配 dashboard_metrics_mock.json 的新结构（core_metrics / segment_metrics / rules）
+- [x] mock_llm.py 的 generate_card_insight() 输出包含 standard_insight / evidence 对象数组 / exploratory_insights / deep_dive_questions
+- [x] mock_llm.py 的 generate_dashboard_insight() 输出包含 standard_diagnosis / dimensions 嵌套 detail / emerging_findings / management_questions
+- [x] mock_llm.py 的 generate_scenario_insight() 输出包含 standard_explanation / scenario_exploration
+- [x] insight_service.py 的 generate_card_insight 引用 card_insight_v2.txt 和 card_insight.schema.json
+- [x] insight_service.py 的 generate_dashboard_insight 引用 dashboard_insight_v2.txt 和 dashboard_insight.schema.json
+- [x] insight_service.py 的 generate_scenario_insight 引用 scenario_insight_v2.txt 和 scenario_insight.schema.json
+- [x] POST /api/insights/card 返回符合 v2 card_insight.schema.json 的 JSON
+- [x] POST /api/insights/dashboard 返回符合 v2 dashboard_insight.schema.json 的 JSON
+- [x] POST /api/insights/scenario 返回符合 v2 scenario_insight.schema.json 的 JSON
+- [x] FastAPI 服务器可正常启动且 /api/health 返回 ok
