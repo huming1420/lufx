@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "executive_summary": {"type": "string"},
+    "health_label": {"type": "string"},
+    "overall_traffic_light": {"type": "string", "enum": ["red", "yellow", "green"]},
+    "analysis_labels": {"type": "array", "items": {"type": "string"}},
+    "dimensions": {"type": "array"},
+    "root_causes": {"type": "array"},
+    "management_questions": {"type": "array"}
+  },
+  "required": ["executive_summary", "health_label", "overall_traffic_light", "analysis_labels"]
+}

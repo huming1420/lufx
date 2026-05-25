@@ -18,6 +18,7 @@ body{background:var(--bg);color:var(--text);font-family:"PingFang SC","Microsoft
 #nav .logo{padding:16px 16px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
 #nav .logo h2{font-size:13.5px;font-weight:700;color:var(--accent);letter-spacing:.5px;}
 #nav .logo p{font-size:10.5px;color:var(--muted);margin-top:3px;}
+.demo-source{display:inline-flex;margin-top:8px;padding:3px 8px;border:1px solid rgba(251,191,36,.35);border-radius:6px;color:var(--yellow);background:rgba(251,191,36,.1);font-size:10px;font-weight:600;}
 .view-switch{display:flex;margin:10px 12px 0;gap:6px;flex-shrink:0;}
 .view-btn{flex:1;padding:6px 0;border:1px solid var(--border);border-radius:6px;font-size:11.5px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:.15s;text-align:center;}
 .view-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
@@ -182,6 +183,7 @@ body.alert-view .view-alert{display:block;}
   <div class="logo">
     <h2>📊 陆金所控股</h2>
     <p>贷款业务经营看板 · 2026</p>
+    <span class="demo-source" id="dashboard-data-source">数据加载中</span>
   </div>
   <div class="view-switch">
     <button class="view-btn active" id="btn-fixed" onclick="switchView('fixed')">📋 固定表</button>
@@ -1352,6 +1354,14 @@ function renderCardInsight(el,data){
 }
 
 var _insightPollTimers=[];
+var AI_CARD_VIEW = {
+  profit_analysis: {element:'insight-profit', section:'sec-profit'},
+  scale_analysis: {element:'insight-scale', section:'sec-scale'},
+  pricing_analysis: {element:'insight-pricing', section:'sec-pricing'},
+  risk_analysis: {element:'insight-risk', section:'sec-risk'},
+  funding_analysis: {element:'insight-funding', section:'sec-funding'},
+  opex_analysis: {element:'insight-opex', section:'sec-opex'}
+};
 function _clearInsightPollTimers(){
   _insightPollTimers.forEach(function(t){clearInterval(t);});
   _insightPollTimers=[];
@@ -1362,9 +1372,12 @@ function loadInsightPageState(period){
   fetch('/api/insights/page-state?period='+encodeURIComponent(period))
     .then(function(resp){ if(!resp.ok) throw new Error('HTTP '+resp.status); return resp.json(); })
     .then(function(state){
+      var sourceBadge=document.getElementById('dashboard-data-source');
+      if(sourceBadge && state.data_source) sourceBadge.textContent=state.data_source.label || '来源未标识';
       var cards=state.cards||[];
       cards.forEach(function(c){
-        var el=document.querySelector('.insight-text[data-card-id="'+c.card_id+'"]');
+        var view=AI_CARD_VIEW[c.card_id];
+        var el=view ? document.getElementById(view.element) : document.querySelector('.insight-text[data-card-id="'+c.card_id+'"]');
         if(!el) return;
         if(c.status==='ready'){
           renderCardInsightFromCache(el,c);
@@ -1418,17 +1431,38 @@ function triggerMissingInsights(period){
 function renderCardInsightFromCache(el,c){
   el.innerHTML='';
   var body=document.createElement('div');
-  body.textContent=c.standard_insight||'';
+  body.textContent=c.analysis||c.summary||'AI 未返回文字诊断';
   el.appendChild(body);
-  appendInsightTags(el,'驱动',c.drivers,'rgba(79,142,247,.16)','var(--accent)');
-  appendInsightTags(el,'关注',c.watch_items,'rgba(251,191,36,.16)','var(--yellow)');
+  appendInsightTags(el,'AI标签',c.analysis_labels,'rgba(79,142,247,.16)','var(--accent)');
   appendInsightEvidence(el,c.evidence);
+  applyAiCardPresentation(c);
   var btn=document.createElement('span');
   btn.textContent='🔄刷新';
   btn.title='刷新此卡片AI洞察';
   btn.style.cssText='cursor:pointer;font-size:10px;color:var(--muted);margin-left:6px;user-select:none;';
   btn.onclick=function(e){e.stopPropagation();refreshOneCardInsight(c.card_id);};
   el.appendChild(btn);
+}
+
+function applyAiCardPresentation(c){
+  var view=AI_CARD_VIEW[c.card_id];
+  if(!view) return;
+  var section=document.getElementById(view.section);
+  if(!section) return;
+  var light=(c.traffic_light==='red'||c.traffic_light==='green')?c.traffic_light:'yellow';
+  var lamp=section.querySelector('.dual-lamp');
+  if(lamp){
+    lamp.innerHTML='<div class="lamp-item"><div class="lamp-dot '+light+'"></div><span>AI研判</span></div>';
+  }
+  var tags=section.querySelector('.insight-box .alert-tags');
+  if(tags){
+    var tagClass=light==='red'?'red':light==='green'?'green':'yellow';
+    tags.innerHTML=(c.analysis_labels||[]).map(function(label){
+      return '<span class="atag '+tagClass+'">#'+String(label).replace(/[<>&"]/g,'')+'</span>';
+    }).join('');
+  }
+  var nav=document.querySelector('.nav-level[data-sec="'+view.section+'"] .lamp');
+  if(nav) nav.innerHTML='<span class="dot dot-'+light.charAt(0)+'"></span>';
 }
 
 function pollJobStatus(jobId,period){

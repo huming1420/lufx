@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "summary": {"type": "string"},
+    "analysis": {"type": "string"},
+    "recommendation": {"type": "string"},
+    "traffic_light": {"type": "string", "enum": ["red", "yellow", "green"]},
+    "analysis_labels": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["summary", "analysis", "recommendation", "traffic_light", "analysis_labels"]
+}

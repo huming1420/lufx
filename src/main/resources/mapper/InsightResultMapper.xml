@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lufax.dashboard.repository.InsightResultMapper">
+
+    <resultMap id="insightResultMap" type="com.lufax.dashboard.model.entity.InsightResult">
+        <id property="id" column="id"/>
+        <result property="period" column="period"/>
+        <result property="metricVersion" column="metric_version"/>
+        <result property="promptVersion" column="prompt_version"/>
+        <result property="insightType" column="insight_type"/>
+        <result property="cardId" column="card_id"/>
+        <result property="status" column="status"/>
+        <result property="rawLlmOutput" column="raw_llm_output"/>
+        <result property="rawLlmOutputJson" column="raw_llm_output_json"/>
+        <result property="rawFactPackJson" column="raw_fact_pack_json"/>
+        <result property="schemaName" column="schema_name"/>
+        <result property="trafficLight" column="traffic_light"/>
+        <result property="analysisLabelsJson" column="analysis_labels_json"/>
+        <result property="resultJson" column="result_json"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="validated" column="validated"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="allColumns">
+        id, period, metric_version, prompt_version, insight_type, card_id,
+        status, raw_llm_output, raw_llm_output_json, raw_fact_pack_json,
+        schema_name, traffic_light, analysis_labels_json, result_json,
+        error_message, validated, created_at, updated_at
+    </sql>
+
+    <insert id="insertOrUpdate" parameterType="com.lufax.dashboard.model.entity.InsightResult"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO insight_result (
+            period, metric_version, prompt_version, insight_type, card_id,
+            status, raw_llm_output, raw_llm_output_json, raw_fact_pack_json,
+            schema_name, traffic_light, analysis_labels_json, result_json,
+            error_message, validated, created_at, updated_at
+        ) VALUES (
+            #{period}, #{metricVersion}, #{promptVersion}, #{insightType}, #{cardId},
+            #{status}, #{rawLlmOutput}, #{rawLlmOutputJson}, #{rawFactPackJson},
+            #{schemaName}, #{trafficLight}, #{analysisLabelsJson}, #{resultJson},
+            #{errorMessage}, #{validated}, now(), now()
+        )
+    </insert>
+
+    <select id="selectByCacheKey" resultMap="insightResultMap">
+        SELECT <include refid="allColumns"/>
+        FROM insight_result
+        WHERE period = #{period}
+          AND metric_version = #{metricVersion}
+          AND prompt_version = #{promptVersion}
+          AND insight_type = #{insightType}
+          AND card_id = #{cardId}
+    </select>
+
+    <select id="selectById" resultMap="insightResultMap">
+        SELECT <include refid="allColumns"/>
+        FROM insight_result
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectMatchingScenarioCache" resultMap="insightResultMap">
+        SELECT <include refid="allColumns"/>
+        FROM insight_result
+        WHERE insight_type = 'scenario'
+          AND period = #{period}
+          AND metric_version = #{metricVersion}
+          AND prompt_version = #{promptVersion}
+          AND status = 'ready'
+        ORDER BY updated_at DESC
+        LIMIT 50
+    </select>
+
+    <update id="updateStatus">
+        UPDATE insight_result
+        SET status = #{status},
+            error_message = #{errorMessage},
+            updated_at = now()
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByPeriodAndType" resultMap="insightResultMap">
+        SELECT <include refid="allColumns"/>
+        FROM insight_result
+        WHERE period = #{period}
+          AND metric_version = #{metricVersion}
+          AND prompt_version = #{promptVersion}
+          AND insight_type = #{insightType}
+    </select>
+
+    <select id="selectByScenario" resultMap="insightResultMap">
+        SELECT <include refid="allColumns"/>
+        FROM insight_result
+        WHERE card_id = #{scenario} AND insight_type = 'scenario'
+        ORDER BY updated_at DESC
+    </select>
+
+    <select id="selectByScenarioAndDate" resultMap="insightResultMap">
+        SELECT <include refid="allColumns"/>
+        FROM insight_result
+        WHERE card_id = #{scenario} AND insight_type = 'scenario'
+        ORDER BY updated_at DESC
+    </select>
+
+</mapper>
