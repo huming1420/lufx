@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "scenario": {"type": "string"},
+    "scenario_label": {"type": "string"},
+    "inputs": {"type": "object"},
+    "projected_net_profit": {"type": "number"},
+    "standard_explanation": {"type": "string"},
+    "scenario_exploration": {"type": "array"},
+    "traffic_light": {"type": "string", "enum": ["red", "yellow", "green"]},
+    "analysis_labels": {"type": "array", "items": {"type": "string"}}
+  },
+  "required": ["scenario", "scenario_label", "inputs", "projected_net_profit", "standard_explanation", "traffic_light", "analysis_labels"]
+}

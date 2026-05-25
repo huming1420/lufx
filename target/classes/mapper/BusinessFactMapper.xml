@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lufax.dashboard.repository.BusinessFactMapper">
+    <resultMap id="businessMetricMap" type="com.lufax.dashboard.model.entity.BusinessMetric">
+        <id property="id" column="id"/>
+        <result property="value" column="metric_value"/>
+    </resultMap>
+    <insert id="insertSnapshot" parameterType="com.lufax.dashboard.model.entity.MetricSnapshot"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO metric_snapshot
+        (period, metric_version, source_type, source_label, source_file, imported_at)
+        VALUES
+        (#{period}, #{metricVersion}, #{sourceType}, #{sourceLabel}, #{sourceFile}, #{importedAt})
+    </insert>
+
+    <select id="countSnapshots" resultType="int">
+        SELECT COUNT(*) FROM metric_snapshot
+        WHERE period = #{period} AND metric_version = #{metricVersion}
+    </select>
+
+    <select id="selectActiveSnapshot" resultType="com.lufax.dashboard.model.entity.MetricSnapshot">
+        SELECT id, period, metric_version, source_type, source_label, source_file, imported_at
+        FROM metric_snapshot WHERE period = #{period}
+        ORDER BY imported_at DESC, id DESC LIMIT 1
+    </select>
+
+    <insert id="insertMetric" parameterType="com.lufax.dashboard.model.entity.BusinessMetric">
+        INSERT INTO business_metric (
+          period, metric_version, metric_scope, metric_code, metric_name, module,
+          dimension_key, segment, metric_value, display_value, unit, yoy, display_yoy,
+          mom, budget, budget_gap, display_budget_gap, redline, yellowline,
+          distance_to_redline, display_distance_to_redline, direction, source_status,
+          product_type, channel_type, customer_type, vintage, mob
+        ) VALUES (
+          #{period}, #{metricVersion}, #{metricScope}, #{metricCode}, #{metricName}, #{module},
+          #{dimensionKey}, #{segment}, #{value}, #{displayValue}, #{unit}, #{yoy}, #{displayYoy},
+          #{mom}, #{budget}, #{budgetGap}, #{displayBudgetGap}, #{redline}, #{yellowline},
+          #{distanceToRedline}, #{displayDistanceToRedline}, #{direction}, #{sourceStatus},
+          #{productType}, #{channelType}, #{customerType}, #{vintage}, #{mob}
+        )
+    </insert>
+
+    <select id="selectMetrics" resultMap="businessMetricMap">
+        SELECT m.* FROM business_metric m
+        WHERE period = #{period} AND metric_version = #{metricVersion}
+        ORDER BY id
+    </select>
+
+    <select id="selectMetricsForCard" resultMap="businessMetricMap">
+        SELECT m.* FROM business_metric m
+        INNER JOIN card_metric_binding b ON b.metric_code = m.metric_code
+        WHERE m.period = #{period} AND m.metric_version = #{metricVersion}
+          AND b.card_id = #{cardId}
+        ORDER BY m.id
+    </select>
+
+    <insert id="insertCard" parameterType="com.lufax.dashboard.model.entity.CardDefinition">
+        INSERT INTO card_definition (card_id, title, module, prompt_version)
+        VALUES (#{cardId}, #{title}, #{module}, COALESCE(#{promptVersion}, 'v2'))
+    </insert>
+
+    <insert id="insertCardMetric">
+        INSERT INTO card_metric_binding (card_id, metric_code)
+        VALUES (#{cardId}, #{metricCode})
+    </insert>
+
+    <select id="selectCards" resultType="com.lufax.dashboard.model.entity.CardDefinition">
+        SELECT card_id, title, module, prompt_version FROM card_definition ORDER BY card_id
+    </select>
+
+    <insert id="insertScenarioBaseline" parameterType="com.lufax.dashboard.model.entity.ScenarioBaseline">
+        INSERT INTO scenario_baseline
+        (period, metric_version, scenario, scenario_label, inputs_json)
+        VALUES (#{period}, #{metricVersion}, #{scenario}, #{scenarioLabel}, #{inputsJson})
+    </insert>
+
+    <select id="selectScenarioBaselines" resultType="com.lufax.dashboard.model.entity.ScenarioBaseline">
+        SELECT period, metric_version, scenario, scenario_label, inputs_json
+        FROM scenario_baseline
+        WHERE period = #{period} AND metric_version = #{metricVersion}
+        ORDER BY CASE scenario WHEN 'bear' THEN 1 WHEN 'base' THEN 2 WHEN 'bull' THEN 3 ELSE 4 END
+    </select>
+
+    <select id="selectScenarioBaseline" resultType="com.lufax.dashboard.model.entity.ScenarioBaseline">
+        SELECT period, metric_version, scenario, scenario_label, inputs_json
+        FROM scenario_baseline
+        WHERE period = #{period} AND metric_version = #{metricVersion} AND scenario = #{scenario}
+    </select>
+</mapper>

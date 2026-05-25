@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lufax.dashboard.repository.InsightJobItemMapper">
+
+    <resultMap id="insightJobItemMap" type="com.lufax.dashboard.model.entity.InsightJobItem">
+        <id property="id" column="id"/>
+        <result property="jobId" column="job_id"/>
+        <result property="insightType" column="insight_type"/>
+        <result property="cardId" column="card_id"/>
+        <result property="status" column="status"/>
+        <result property="resultId" column="result_id"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="allColumns">
+        id, job_id, insight_type, card_id, status, result_id,
+        error_message, created_at, updated_at
+    </sql>
+
+    <insert id="insert" parameterType="com.lufax.dashboard.model.entity.InsightJobItem"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO insight_job_item (
+            job_id, insight_type, card_id, status, created_at, updated_at
+        ) VALUES (
+            #{jobId}, #{insightType}, #{cardId}, #{status}, now(), now()
+        )
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE insight_job_item
+        <set>
+            status = #{status},
+            <if test="resultId != null">
+                result_id = #{resultId},
+            </if>
+            <if test="errorMessage != null">
+                error_message = #{errorMessage},
+            </if>
+            updated_at = now(),
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectByJobId" resultMap="insightJobItemMap">
+        SELECT <include refid="allColumns"/>
+        FROM insight_job_item
+        WHERE job_id = #{jobId}
+        ORDER BY id
+    </select>
+
+    <select id="selectPendingByJobId" resultMap="insightJobItemMap">
+        SELECT <include refid="allColumns"/>
+        FROM insight_job_item
+        WHERE job_id = #{jobId}
+          AND status IN ('pending', 'running')
+        ORDER BY id
+    </select>
+
+</mapper>

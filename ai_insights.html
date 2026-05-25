@@ -19,6 +19,7 @@ body{background:var(--bg);color:var(--text);font-family:"PingFang SC","Microsoft
 .top-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
 .top-bar h1{font-size:16px;font-weight:700;color:var(--accent);}
 .top-bar p{font-size:11px;color:var(--muted);margin-top:2px;}
+.demo-source{display:inline-flex;margin-top:7px;padding:3px 8px;border:1px solid rgba(251,191,36,.35);border-radius:6px;color:var(--yellow);background:rgba(251,191,36,.1);font-size:10px;font-weight:600;}
 .top-bar .back-btn{padding:5px 14px;border-radius:7px;font-size:11.5px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--muted);transition:.15s;}
 .top-bar .back-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
 
@@ -181,6 +182,7 @@ body{background:var(--bg);color:var(--text);font-family:"PingFang SC","Microsoft
   <div>
     <h1>🤖 陆金所控股 · AI 经营洞察</h1>
     <p>基于杜邦拆解框架 · 动态解读 + 经营计算器</p>
+    <span class="demo-source" id="ai-data-source">数据加载中</span>
   </div>
   <button type="button" class="back-btn" onclick="location.href='lufax_dashboard3.html'">← 返回看板</button>
 </div>
@@ -543,7 +545,7 @@ function renderAiOverview(data){
   updateAiScoreCircle(AI_OVERVIEW_SCORE);
 
   var healthLabel = firstValue(data, ['health_label','healthLabel','status_label'], null);
-  var healthSummary = firstValue(data, ['health_summary','healthSummary','summary'], null);
+  var healthSummary = firstValue(data, ['health_summary','healthSummary','executive_summary','summary'], null);
   var verdictObj = data.verdict;
   var verdictText = null;
   var verdictClass = null;
@@ -552,6 +554,10 @@ function renderAiOverview(data){
     verdictClass = verdictObj.level || verdictObj.class || null;
   } else {
     verdictText = firstValue(data, ['verdict_tag','verdictTag','verdict'], null);
+  }
+  if(!verdictText && data.analysis_labels) verdictText = toArray(data.analysis_labels).join(' / ');
+  if(!verdictClass && data.overall_traffic_light){
+    verdictClass = data.overall_traffic_light === 'green' ? 'good' : data.overall_traffic_light === 'red' ? 'poor' : 'warn';
   }
   setTextById('ai-health-label', healthLabel);
   setTextById('ai-health-summary', healthSummary);
@@ -692,6 +698,8 @@ function pollDashboardJob(jobId){
 }
 
 function _renderDashboardData(data, fromClientCache){
+  var sourceBadge = document.getElementById('ai-data-source');
+  if(sourceBadge && data.data_source) sourceBadge.textContent = data.data_source.label || '来源未标识';
   renderAiOverview(data);
   AI_DIMS = toArray(firstValue(data, ['dimensions','ai_dimensions','dims'], [])).map(normalizeDimension);
   if(!AI_DIMS.length) AI_DIMS = DEFAULT_AI_DIMS.map(function(d,i){return normalizeDimension(d,i);});
@@ -1054,15 +1062,44 @@ function showAiDetail(dimId){
 
 var AI_SANKEY_CHART = null;
 
-var SCENARIOS = {
-  bear: {anr:1700, cg:10, price:17.5, closs:9.5, npl:1.8, fund:2.2, scost:1.8, ocost:1.4, tax:1.2, label:'🐻 悲观情景'},
-  base: {anr:1900, cg:25, price:18.2, closs:7.8, npl:1.2, fund:2.05, scost:1.6, ocost:1.3, tax:1.2, label:'📊 基准情景'},
-  bull: {anr:2200, cg:35, price:18.5, closs:6.5, npl:0.9, fund:1.85, scost:1.4, ocost:1.2, tax:1.1, label:'🐂 乐观情景'},
-};
+var SCENARIOS = {};
+var DEFAULT_SCENARIO_INSIGHTS = {};
+
+async function loadAiScenarioDefaults(){
+  try{
+    var resp = await fetch('/api/insights/page-state?period='+encodeURIComponent(CURRENT_PERIOD));
+    if(!resp.ok) throw new Error('scenario defaults request failed: ' + resp.status);
+    var state = await resp.json();
+    var sourceBadge = document.getElementById('ai-data-source');
+    if(sourceBadge && state.data_source) sourceBadge.textContent = state.data_source.label || '来源未标识';
+    toArray(state.scenarios).forEach(function(item){
+      var inputs = item.inputs || {};
+      SCENARIOS[item.scenario] = {
+        anr:inputs.anr, cg:inputs.consumer_finance_growth, price:inputs.pricing_rate,
+        closs:inputs.credit_loss_rate, npl:inputs.npl_rate, fund:inputs.funding_cost_rate,
+        scost:inputs.sales_cost_rate, ocost:inputs.opex_rate, tax:inputs.tax_other_rate,
+        label:item.scenario_label || item.scenario
+      };
+      DEFAULT_SCENARIO_INSIGHTS[item.scenario] = item;
+    });
+    loadScenario(CURRENT_SCENARIO);
+    if(DEFAULT_SCENARIO_INSIGHTS[CURRENT_SCENARIO]){
+      renderScenarioInsight(DEFAULT_SCENARIO_INSIGHTS[CURRENT_SCENARIO]);
+    }
+  }catch(err){
+    console.warn('loadAiScenarioDefaults failed', err);
+    var narrativeEl=document.getElementById('ai-narrative-text');
+    if(narrativeEl) narrativeEl.textContent='AI 默认情景加载失败，请确认后端服务可用。';
+  }
+}
 
 function loadScenario(sc){
   var s = SCENARIOS[sc];
-  if(!s) return;
+  if(!s){
+    var narrativeEl=document.getElementById('ai-narrative-text');
+    if(narrativeEl) narrativeEl.textContent='正在加载 AI 默认情景...';
+    return;
+  }
   CURRENT_SCENARIO = sc;
   var ids = ['anr','cg','price','closs','npl','fund','scost','ocost','tax'];
   ids.forEach(function(k){
@@ -1077,6 +1114,7 @@ function loadScenario(sc){
   var scMap = {bear:0, base:1, bull:2};
   if(btns[scMap[sc]]) btns[scMap[sc]].classList.add('active');
   updatePredict();
+  if(DEFAULT_SCENARIO_INSIGHTS[sc]) renderScenarioInsight(DEFAULT_SCENARIO_INSIGHTS[sc]);
 }
 
 function getSliderVal(id){
@@ -1463,6 +1501,8 @@ function renderScenarioInsight(data, signature){
   if(signature) LAST_RENDERED_AI_SIGNATURE = signature;
   data = data || {};
   var explanation = data.standard_explanation || data.explanation || data;
+  var light = data.traffic_light === 'red' ? 'var(--red)' : data.traffic_light === 'green' ? 'var(--green)' : 'var(--yellow)';
+  var labels = toArray(data.analysis_labels);
   var fields = [
     ['scenario_label','情景'],
     ['judgement','判断'],
@@ -1478,6 +1518,17 @@ function renderScenarioInsight(data, signature){
     if(value === undefined || value === null || value === '') return '';
     return '<div style="margin-bottom:7px;"><strong style="color:var(--accent);">'+pair[1]+': </strong>'+renderTextBlock(value)+'</div>';
   }).join('');
+  if(typeof explanation === 'string'){
+    html += '<div style="margin-bottom:7px;"><strong style="color:var(--accent);">模型说明: </strong>'+renderTextBlock(explanation)+'</div>';
+  }
+  if(data.traffic_light){
+    html += '<div style="margin-bottom:7px;"><strong style="color:var(--accent);">AI研判: </strong><span style="color:'+light+';font-weight:700;">'+escapeHtml(data.traffic_light.toUpperCase())+'</span></div>';
+  }
+  if(labels.length){
+    html += '<div style="margin-bottom:7px;"><strong style="color:var(--accent);">AI标签: </strong>'+labels.map(function(label){
+      return '<span style="display:inline-flex;padding:2px 7px;margin-right:5px;border-radius:8px;background:rgba(79,142,247,.15);color:var(--accent);">'+escapeHtml(label)+'</span>';
+    }).join('')+'</div>';
+  }
   var exploration = data.scenario_exploration || data.exploration || {};
   var explorationFields = [
     ['fragile_assumption','脆弱假设'],
@@ -1514,6 +1565,7 @@ function applyHashTab(){
 window.addEventListener('DOMContentLoaded', function(){
   applyHashTab();
   loadAiInsights();
+  loadAiScenarioDefaults();
   // 延迟初始化确保容器尺寸稳定后高清渲染
   setTimeout(function(){ updatePredict(); }, 200);
 });

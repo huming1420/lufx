@@ -1,0 +1,44 @@
+[
+  {
+    "card_id": "profit_analysis",
+    "title": "利润分析",
+    "module": "profit",
+    "metric_codes": ["net_profit_management", "loan_profit", "non_loan_profit"],
+    "default_prompt_version": "v2"
+  },
+  {
+    "card_id": "scale_analysis",
+    "title": "规模分析",
+    "module": "scale",
+    "metric_codes": ["anr", "enr", "disbursement"],
+    "default_prompt_version": "v2"
+  },
+  {
+    "card_id": "risk_analysis",
+    "title": "风险分析",
+    "module": "risk",
+    "metric_codes": ["credit_loss_rate", "dpd5_rate", "vintage_dpd"],
+    "default_prompt_version": "v2"
+  },
+  {
+    "card_id": "pricing_analysis",
+    "title": "定价分析",
+    "module": "pricing",
+    "metric_codes": ["pricing_rate", "pricing_by_customer"],
+    "default_prompt_version": "v2"
+  },
+  {
+    "card_id": "funding_analysis",
+    "title": "资金分析",
+    "module": "funding",
+    "metric_codes": ["funding_cost_rate", "funding_by_source"],
+    "default_prompt_version": "v2"
+  },
+  {
+    "card_id": "opex_analysis",
+    "title": "运营成本分析",
+    "module": "opex",
+    "metric_codes": ["sales_cost_rate", "opex_rate", "sales_capacity"],
+    "default_prompt_version": "v2"
+  }
+]
